@@ -1,29 +1,207 @@
-# education-project
+# 在线教学支持服务平台 - 教师中心系统
 
-This template should help get you started developing with Vue 3 in Vite.
+## 项目简介
 
-## Recommended IDE Setup
+这是一个基于 Vue 3 + Element Plus 开发的在线教学支持服务平台教师中心系统，为教师提供全方位的教学管理功能。
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 主要功能模块
 
-## Customize configuration
+### 1. 网站门户
+- 轮播图管理
+- 公告管理
+- 新闻管理
+- 友情链接
+- SEO设置
+- 主题设置
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### 2. 课程管理
+- 课程列表查看
+- 创建新课程
+- 编辑课程信息
+- 课程状态管理
+- 课程统计分析
 
-## Project Setup
+### 3. 课程资源管理
+- 资源文件上传
+- 资源分类管理
+- 文件预览功能
+- 批量操作
+- 权限控制
 
-```sh
+### 4. 试题试卷管理
+- 题库管理（单选、多选、判断、填空、问答题）
+- 试卷组卷
+- 题目分类
+- 难度等级设置
+
+### 5. 作业管理
+- 作业布置
+- 作业批改
+- 提交统计
+- 成绩管理
+
+### 6. 测评管理
+- 创建测评任务
+- 测评结果查看
+- 数据统计分析
+
+### 7. 成绩管理
+- 成绩录入
+- 成绩统计
+- 排名分析
+- 数据导出
+
+### 8. 实训管理
+- 实训项目创建
+- 实训进度跟踪
+- 实训报告管理
+
+### 9. 问卷调查管理
+- 问卷创建
+- 问卷发布
+- 结果统计
+- 数据分析
+
+### 10. 教学效果评价
+- 评价指标设置
+- 评价结果查看
+- 效果分析报告
+
+### 11. 问题中心
+- 问题反馈
+- 常见问题FAQ
+- 技术支持
+
+## 技术栈
+
+- **前端框架**: Vue 3
+- **UI组件库**: Element Plus
+- **状态管理**: Pinia
+- **路由管理**: Vue Router 4
+- **图表库**: ECharts + Vue-ECharts
+- **HTTP客户端**: Axios
+- **构建工具**: Vite
+- **开发语言**: JavaScript
+
+## 项目结构
+
+```
+src/
+├── api/                    # API接口
+├── assets/                 # 静态资源
+│   ├── images/            # 图片资源
+│   └── styles/            # 样式文件
+├── components/            # 公共组件
+├── router/                # 路由配置
+├── stores/                # 状态管理
+├── utils/                 # 工具函数
+├── views/                 # 页面组件
+│   ├── portal/           # 网站门户  kasud
+│   ├── course/           # 课程管理  asfbkjf
+│   ├── resource/         # 资源管理  safkujf
+│   ├── exam/             # 试题试卷  
+│   ├── homework/         # 作业管理  
+│   ├── assessment/       # 测评管理  
+│   ├── grade/            # 成绩管理
+│   ├── training/         # 实训管理  kasujgf
+│   ├── survey/           # 问卷调查  adsgbk
+│   ├── evaluation/       # 教学评价  afawfa
+│   └── support/          # 问题中心  assfdgvs
+├── App.vue               # 根组件
+└── main.js               # 入口文件
+```
+
+## 安装和运行
+
+### 环境要求
+- Node.js >= 16.0.0
+- npm >= 8.0.0
+
+### 安装依赖
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
-
-```sh
+### 开发环境运行
+```bash
 npm run dev
 ```
 
-### Compile and Minify for Production
-
-```sh
+### 生产环境构建
+```bash
 npm run build
 ```
+
+### 预览构建结果
+```bash
+npm run preview
+```
+
+## 访问地址
+
+- 开发环境: http://localhost:12000
+- 网络访问: http://10.2.38.210:12000
+
+## 登录信息
+
+- 用户名: teacher
+- 密码: 123456
+
+## 功能特色
+
+### 1. 响应式设计
+- 支持桌面端和移动端访问
+- 自适应不同屏幕尺寸
+- 优化的用户体验
+
+### 2. 模块化架构
+- 清晰的模块划分
+- 组件化开发
+- 易于维护和扩展
+
+### 3. 数据可视化
+- 丰富的图表展示
+- 实时数据更新
+- 直观的统计分析
+
+### 4. 用户友好
+- 直观的操作界面
+- 完善的提示信息
+- 流畅的交互体验
+
+### 5. 功能完整
+- 覆盖教学全流程
+- 支持多种文件格式
+- 灵活的权限控制
+
+## 开发说明
+
+### 代码规范
+- 使用 ESLint 进行代码检查
+- 遵循 Vue 3 Composition API 规范
+- 统一的命名规范和注释规范
+
+### 组件开发
+- 优先使用 Composition API
+- 合理拆分组件粒度
+- 注重组件复用性
+
+### 样式管理
+- 使用 CSS 变量统一主题
+- 响应式设计优先
+- 模块化样式管理
+
+## 浏览器支持
+
+- Chrome >= 87
+- Firefox >= 78
+- Safari >= 14
+- Edge >= 88
+
+## 许可证
+
+MIT License
+
+## 联系方式
+
+如有问题或建议，请联系开发团队。
