@@ -4,7 +4,8 @@ import { useUserStore } from '@/stores/user'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API || '/api',
+  baseURL: import.meta.env.VITE_BASE_API || '/api',
+
   timeout: 15000
 })
 

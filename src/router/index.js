@@ -1,4 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+import ExamView from '../views/Exam/ExamList.vue'
+import Assignment from '../views/Assign/AssPublish.vue'
+import Assupdate from '../views/Assign/Assupdate.vue'
+import Asspigai from '../views/Assign/Asspigai.vue'
+import evaluate from '../views/evaluate.vue'
+import survey from '../views/survey/SurveyManage.vue'
 import Layout from '@/components/Layout.vue'
 import Login from '@/views/Login.vue'
 import Dashboard from '@/views/Dashboard.vue'
