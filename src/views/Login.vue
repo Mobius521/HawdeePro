@@ -135,7 +135,7 @@ export default {
           }
           
           // 跳转到首页
-          router.push('/')
+          router.push('/dashboard')
         } else {
           ElMessage.error(result.message || '登录失败')
         }

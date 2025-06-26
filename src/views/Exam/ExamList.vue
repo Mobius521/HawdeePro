@@ -58,7 +58,7 @@ import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ExamUpload from './ExamUpload.vue'
 import ExamEditDialog from './ExamEditDialog.vue'
-import request from '@/util/request.js'
+import request from '@/utils/request.js'
 
 const exams = ref([])
 const uploadVisible = ref(false)
