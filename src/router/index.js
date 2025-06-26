@@ -4,7 +4,7 @@ import Login from '@/views/Login.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import CourseList from '@/views/course/List.vue'
 import CourseCreate from '@/views/course/createCourse.vue'
-import CourseEdit from '@/views/course/Edit.vue'
+import CourseEdit from '@/views/course/editCourse.vue'
 import ResourceList from '@/views/resources/List.vue'  
 import ResourceUpload from '@/views/resources/Upload.vue'
 import TrainingList from '@/views/training/List.vue'    
@@ -25,7 +25,7 @@ const routes = [
   {
     path: '/',
     component: Layout,
-    redirect: '/dashboard',
+    redirect: '/login',
     children: [
       {
         path: 'dashboard',
