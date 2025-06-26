@@ -7,6 +7,7 @@ import { createPersistedState } from 'pinia-persistedstate-plugin'
 import App from './App.vue'
 import router from './router'
 import locale from 'element-plus/dist/locale/zh-cn.js'
+import 'element-plus/dist/index.css'
 const app = createApp(App)
 const pinia = createPinia()
 const persist = createPersistedState()
