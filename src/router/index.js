@@ -1,13 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 import ExamView from '../views/Exam/ExamList.vue'
 import Assignment from '../views/Assign/AssPublish.vue'
-import Assupdate from '../views/Assign/Assupdate.vue'
 import Asspigai from '../views/Assign/Asspigai.vue'
+import Assupdate from '../views/Assign/Assupdate.vue'
 import evaluate from '../views/evaluate.vue'
 import survey from '../views/survey/SurveyManage.vue'
 import Layout from '@/components/Layout.vue'
 import Login from '@/views/Login.vue'
+import register from '@/views/Register.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import CourseList from '@/views/course/List.vue'
 import CourseCreate from '@/views/course/createCourse.vue'
@@ -22,20 +25,39 @@ import SurveyResult from '@/views/survey/Result.vue'
 import EvaluationList from '@/views/evaluation/List.vue'
 import EvaluationAnalysis from '@/views/evaluation/Analysis.vue'
 import PortalIndex from '@/views/portal/index.vue'  
+import publicPortal from '@/views/portal/publicPortal.vue'
+import UserManagement from '@/views/admin/UserManagement.vue'
+import SystemSettings from '@/views/admin/SystemSettings.vue'
+import CourseAudit from '@/views/admin/CourseAudit.vue'
+import SystemMonitor from '@/views/admin/SystemMonitor.vue'
 
 const routes = [
+  {
+    path: '/',
+    redirect: '/publicPortal'
+  },
+  {
+    path: '/publicPortal',
+    component: publicPortal,
+    meta: { title: '在线教学支持服务平台', icon: 'Monitor' }
+  },
   {
     path: '/login',
     component: Login,
     meta: { title: '登录' }
   },
   {
-    path: '/',
+    path: '/register',
+    component: register,
+    meta: { title: '注册' }
+  },
+  {
+    path: '/dashboard',
     component: Layout,
-    redirect: '/login',
+    redirect: '/dashboard/home',
     children: [
       {
-        path: 'dashboard',
+        path: 'home',
         component: Dashboard,
         meta: { title: '工作台', icon: 'House' }
       },
@@ -43,7 +65,7 @@ const routes = [
       {
         path: 'portal',
         component: PortalIndex,
-        meta: { title: '网站门户', icon: 'Monitor' }
+        meta: { title: '网站门户', icon: 'Monitor', roles: ['admin'] }
       },
       // 课程管理
       {
@@ -60,12 +82,12 @@ const routes = [
           {
             path: 'create',
             component: CourseCreate,
-            meta: { title: '创建课程' }
+            meta: { title: '创建课程', roles: ['teacher'] }
           },
           {
             path: 'edit/:id',
             component: CourseEdit,
-            meta: { title: '编辑课程' }
+            meta: { title: '编辑课程', roles: ['teacher'] }
           }
         ]
       },
@@ -84,7 +106,7 @@ const routes = [
           {
             path: 'upload',
             component: ResourceUpload,
-            meta: { title: '上传资源' }
+            meta: { title: '上传资源', roles: ['teacher'] }
           }
         ]
       },
@@ -94,7 +116,7 @@ const routes = [
         path: 'training',
         name: 'Training',
         redirect: '/training/list',
-        meta: { title: '实训管理', icon: 'Tools' },
+        meta: { title: '实训管理', icon: 'Tools', roles: ['teacher'] },
         children: [
           {
             path: 'list',
@@ -113,7 +135,7 @@ const routes = [
         path: 'survey',
         name: 'Survey',
         redirect: '/survey/list',
-        meta: { title: '问卷调查', icon: 'List' },
+        meta: { title: '问卷调查', icon: 'List', roles: ['teacher'] },
         children: [
           {
             path: 'list',
@@ -137,7 +159,7 @@ const routes = [
         path: 'evaluation',
         name: 'Evaluation',
         redirect: '/evaluation/list',
-        meta: { title: '教学评价', icon: 'Star' },
+        meta: { title: '教学评价', icon: 'Star', roles: ['teacher'] },
         children: [
           {
             path: 'list',
@@ -151,27 +173,35 @@ const routes = [
           }
         ]
       },
-      // 问题中心
-      // {
-      //   path: 'support',
-      //   name: 'Support',
-      //   redirect: '/support/list',
-      //   meta: { title: '问题中心', icon: 'QuestionFilled' },
-      //   children: [
-      //     {
-      //       path: 'list',
-      //       name: 'SupportList',
-      //       component: () => import('@/views/support/List.vue'),
-      //       meta: { title: '问题列表' }
-      //     },
-      //     {
-      //       path: 'faq',
-      //       name: 'FAQ',
-      //       component: () => import('@/views/support/FAQ.vue'),
-      //       meta: { title: '常见问题' }
-      //     }
-      //   ]
-      // }
+      // 管理员功能
+      {
+        path: 'admin',
+        name: 'Admin',
+        redirect: '/dashboard/admin/users',
+        meta: { title: '系统管理', icon: 'Setting', roles: ['admin'] },
+        children: [
+          {
+            path: 'users',
+            component: UserManagement,
+            meta: { title: '用户管理' }
+          },
+          {
+            path: 'settings',
+            component: SystemSettings,
+            meta: { title: '系统设置' }
+          },
+          {
+            path: 'course-audit',
+            component: CourseAudit,
+            meta: { title: '课程审核' }
+          },
+          {
+            path: 'monitor',
+            component: SystemMonitor,
+            meta: { title: '系统监控' }
+          }
+        ]
+      }
     ]
   }
 ]
@@ -185,15 +215,40 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   // 设置页面标题
   if (to.meta.title) {
-    document.title = `${to.meta.title} - 教师中心`
+    document.title = `${to.meta.title} - 在线教学平台`
   }
+
+  // 允许访问的公共页面
+  const publicPages = ['/publicPortal', '/login', '/register']
   
-  // 简单的登录验证（实际项目中应该检查token等）
-  if (to.path !== '/login' && !localStorage.getItem('userToken')) {
-    next('/login')
-  } else {
+  // 检查是否需要登录
+  if (publicPages.includes(to.path)) {
+    // 公共页面，直接允许访问
     next()
+    return
   }
+
+  const userStore = useUserStore()
+  
+  // 检查是否已登录
+  if (!userStore.isLoggedIn) {
+    // 未登录，跳转到登录页
+    next('/login')
+    return
+  }
+
+  // 检查角色权限
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    const userRole = userStore.userRole
+    if (!to.meta.roles.includes(userRole)) {
+      // 权限不足，跳转到首页
+      ElMessage.error('您没有访问该页面的权限')
+      next('/dashboard/home')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

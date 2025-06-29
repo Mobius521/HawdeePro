@@ -10,7 +10,19 @@
   
       <!-- 编辑表单 -->
       <div class="form-container card">
+        <el-skeleton :loading="loading" :rows="5" animated v-if="loading">
+          <template #template>
+            <div style="padding: 20px;">
+              <el-skeleton-item variant="h3" style="width: 30%; margin-bottom: 20px;" />
+              <el-skeleton-item variant="text" style="width: 100%; margin-bottom: 10px;" />
+              <el-skeleton-item variant="text" style="width: 80%; margin-bottom: 10px;" />
+              <el-skeleton-item variant="text" style="width: 60%; margin-bottom: 10px;" />
+            </div>
+          </template>
+        </el-skeleton>
+        
         <el-form
+          v-else
           ref="courseFormRef"
           :model="courseForm"
           :rules="courseRules"
@@ -36,6 +48,27 @@
                   <el-input
                     v-model="courseForm.code"
                     placeholder="请输入课程代码"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+  
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="上课时间">
+                  <el-input
+                    v-model="courseForm.time"
+                    placeholder="如：周一第1-2节"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="教室">
+                  <el-input
+                    v-model="courseForm.classroom"
+                    placeholder="如：教室A101"
                     clearable
                   />
                 </el-form-item>
@@ -75,19 +108,27 @@
   import { ref, reactive, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
+  import { courseApi, courseUtils } from '@/api/course'
+  import { useUserStore } from '@/stores/user'
   
   export default {
     name: 'CourseEdit',
     setup() {
       const route = useRoute()
       const router = useRouter()
+      const userStore = useUserStore()
       const courseFormRef = ref()
       const submitting = ref(false)
+      const loading = ref(false)
   
       const courseForm = reactive({
         name: '',
         code: '',
-        description: ''
+        description: '',
+        teacherId: '',
+        time: '',
+        classroom: '',
+        evaluation: ''
       })
   
       const courseRules = {
@@ -102,6 +143,35 @@
         ]
       }
   
+      // 加载课程数据
+      const loadCourseData = async (courseId) => {
+        try {
+          loading.value = true
+          const response = await courseApi.getCourseById(courseId)
+          
+          if (response.code === 0) {
+            const courseData = response.data
+            // 将后端数据转换为前端格式
+            Object.assign(courseForm, {
+              name: courseData.subjectId,
+              code: courseData.courseId,
+              description: courseData.evaluation || '',
+              teacherId: courseData.teacherId,
+              time: courseData.time,
+              classroom: courseData.classroom,
+              evaluation: courseData.evaluation
+            })
+          } else {
+            ElMessage.error(response.message || '加载课程数据失败')
+          }
+        } catch (error) {
+          console.error('加载课程数据失败:', error)
+          ElMessage.error('加载课程数据失败，请稍后重试')
+        } finally {
+          loading.value = false
+        }
+      }
+  
       const handleSubmit = async () => {
         if (!courseFormRef.value) return
   
@@ -109,13 +179,28 @@
           await courseFormRef.value.validate()
           submitting.value = true
   
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          // 准备提交数据
+          const submitData = {
+            courseId: courseForm.code,
+            teacherId: courseForm.teacherId || userStore.userInfo.id || 'T123',
+            subjectId: courseForm.name,
+            time: courseForm.time || '周一第1-2节',
+            evaluation: courseForm.description || '良好',
+            classroom: courseForm.classroom || '教室A101'
+          }
   
-          ElMessage.success('课程修改成功')
-          router.push('/course/list')
+          // 调用API
+          const response = await courseApi.updateCourse(submitData)
+  
+          if (response.code === 0) {
+            ElMessage.success('课程修改成功')
+            router.push('/dashboard/course/list')
+          } else {
+            ElMessage.error(response.message || '修改失败')
+          }
         } catch (error) {
-          console.error('表单验证失败:', error)
+          console.error('修改课程失败:', error)
+          ElMessage.error('修改失败，请稍后重试')
         } finally {
           submitting.value = false
         }
@@ -125,17 +210,18 @@
         router.back()
       }
   
-      onMounted(() => {
-        // 模拟加载课程数据
-        const courseId = route.params.id
-        console.log('编辑课程ID:', courseId)
+      onMounted(async () => {
+        // 初始化用户信息
+        userStore.initUserInfo()
         
-        // 模拟数据
-        Object.assign(courseForm, {
-          name: 'Web前端开发基础',
-          code: 'CS101',
-          description: '学习HTML、CSS、JavaScript等前端技术'
-        })
+        // 加载课程数据
+        const courseId = route.params.id
+        if (courseId) {
+          await loadCourseData(courseId)
+        } else {
+          ElMessage.error('课程ID不存在')
+          router.push('/dashboard/course/list')
+        }
       })
   
       return {
@@ -143,6 +229,7 @@
         courseForm,
         courseRules,
         submitting,
+        loading,
         handleSubmit,
         handleCancel
       }

@@ -257,10 +257,12 @@
   </template>
   
   <script>
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Delete, Plus } from '@element-plus/icons-vue'
+  import { courseApi, courseUtils } from '@/api/course'
+  import { useUserStore } from '@/stores/user'
   
   export default {
     name: 'CourseCreate',
@@ -270,6 +272,8 @@
     },
     setup() {
       const router = useRouter()
+      const userStore = useUserStore()
+  
       const courseFormRef = ref()
       const submitting = ref(false)
   
@@ -281,8 +285,8 @@
         duration: 48,
         semester: '',
         description: '',
-        type: '',
-        difficulty: '',
+        type: 'required',
+        difficulty: 'intermediate',
         startDate: '',
         endDate: '',
         maxStudents: 50,
@@ -401,13 +405,29 @@
   
           submitting.value = true
   
-          // 模拟API调用
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          // 准备提交数据
+          const submitData = {
+            ...courseForm,
+            teacherId: userStore.userInfo.id || 'T123',
+            time: `${courseForm.startDate} - ${courseForm.endDate}`,
+            classroom: '教室A101' // 默认值，后续可以添加教室选择
+          }
   
-          ElMessage.success('课程创建成功')
-          router.push('/course/list')
+          // 转换为后端格式
+          const backendData = courseUtils.transformToBackendData(submitData)
+  
+          // 调用API
+          const response = await courseApi.addCourse(backendData)
+  
+          if (response.code === 0) {
+            ElMessage.success('课程创建成功')
+            router.push('/dashboard/course/list')
+          } else {
+            ElMessage.error(response.message || '创建失败')
+          }
         } catch (error) {
-          console.error('表单验证失败:', error)
+          console.error('创建课程失败:', error)
+          ElMessage.error('创建失败，请稍后重试')
         } finally {
           submitting.value = false
         }
@@ -429,6 +449,11 @@
           // 用户选择继续编辑
         })
       }
+  
+      onMounted(() => {
+        // 初始化用户信息
+        userStore.initUserInfo()
+      })
   
       return {
         courseFormRef,

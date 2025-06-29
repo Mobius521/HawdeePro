@@ -11,7 +11,7 @@
             >
               <el-icon><Expand v-if="appStore.sidebarCollapsed" /><Fold v-else /></el-icon>
             </el-button>
-            <h1 class="system-title">在线教学支持服务平台 - 教师中心</h1>
+            <h1 class="system-title">在线教学支持服务平台</h1>
           </div>
           
           <div class="header-right">
@@ -61,106 +61,118 @@
               router
               class="sidebar-menu"
             >
-              <el-menu-item index="/dashboard">
+              <el-menu-item index="/dashboard/home">
                 <el-icon><House /></el-icon>
                 <template #title>工作台</template>
               </el-menu-item>
               
-              <el-menu-item index="/portal">
+              <el-menu-item index="/dashboard/portal">
                 <el-icon><Monitor /></el-icon>
                 <template #title>网站门户</template>
               </el-menu-item>
               
-              <el-sub-menu index="/course">
+              <el-sub-menu index="/dashboard/course">
                 <template #title>
                   <el-icon><Reading /></el-icon>
                   <span>课程管理</span>
                 </template>
-                <el-menu-item index="/course/list">课程列表</el-menu-item>
-                <el-menu-item index="/course/create">创建课程</el-menu-item>
+                <el-menu-item index="/dashboard/course/list">课程列表</el-menu-item>
+                <el-menu-item index="/dashboard/course/create">创建课程</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/resource">
+              <el-sub-menu index="/dashboard/resource">
                 <template #title>
                   <el-icon><FolderOpened /></el-icon>
                   <span>资源管理</span>
                 </template>
-                <el-menu-item index="/resource/list">资源列表</el-menu-item>
-                <el-menu-item index="/resource/upload">上传资源</el-menu-item>
+                <el-menu-item index="/dashboard/resource/list">资源列表</el-menu-item>
+                <el-menu-item index="/dashboard/resource/upload">上传资源</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/exam">
+              <el-sub-menu index="/dashboard/exam">
                 <template #title>
                   <el-icon><Document /></el-icon>
                   <span>试题试卷</span>
                 </template>
-                <el-menu-item index="/exam/question">题库管理</el-menu-item>
-                <el-menu-item index="/exam/paper">试卷管理</el-menu-item>
+                <el-menu-item index="/dashboard/exam/question">题库管理</el-menu-item>
+                <el-menu-item index="/dashboard/exam/paper">试卷管理</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/homework">
+              <el-sub-menu index="/dashboard/homework">
                 <template #title>
                   <el-icon><EditPen /></el-icon>
                   <span>作业管理</span>
                 </template>
-                <el-menu-item index="/homework/list">作业列表</el-menu-item>
-                <el-menu-item index="/homework/create">布置作业</el-menu-item>
-                <el-menu-item index="/homework/review">作业批改</el-menu-item>
+                <el-menu-item index="/dashboard/homework/list">作业列表</el-menu-item>
+                <el-menu-item index="/dashboard/homework/create">布置作业</el-menu-item>
+                <el-menu-item index="/dashboard/homework/review">作业批改</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/assessment">
+              <el-sub-menu index="/dashboard/assessment">
                 <template #title>
                   <el-icon><Checked /></el-icon>
                   <span>测评管理</span>
                 </template>
-                <el-menu-item index="/assessment/list">测评列表</el-menu-item>
-                <el-menu-item index="/assessment/create">创建测评</el-menu-item>
+                <el-menu-item index="/dashboard/assessment/list">测评列表</el-menu-item>
+                <el-menu-item index="/dashboard/assessment/create">创建测评</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/grade">
+              <el-sub-menu index="/dashboard/grade">
                 <template #title>
                   <el-icon><TrendCharts /></el-icon>
                   <span>成绩管理</span>
                 </template>
-                <el-menu-item index="/grade/list">成绩列表</el-menu-item>
-                <el-menu-item index="/grade/statistics">成绩统计</el-menu-item>
+                <el-menu-item index="/dashboard/grade/list">成绩列表</el-menu-item>
+                <el-menu-item index="/dashboard/grade/statistics">成绩统计</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/training">
+              <el-sub-menu index="/dashboard/training">
                 <template #title>
                   <el-icon><Tools /></el-icon>
                   <span>实训管理</span>
                 </template>
-                <el-menu-item index="/training/list">实训项目</el-menu-item>
-                <el-menu-item index="/training/create">创建实训</el-menu-item>
+                <el-menu-item index="/dashboard/training/list">实训项目</el-menu-item>
+                <el-menu-item index="/dashboard/training/create">创建实训</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/survey">
+              <el-sub-menu index="/dashboard/survey">
                 <template #title>
                   <el-icon><List /></el-icon>
                   <span>问卷调查</span>
                 </template>
-                <el-menu-item index="/survey/list">问卷列表</el-menu-item>
-                <el-menu-item index="/survey/create">创建问卷</el-menu-item>
-                <el-menu-item index="/survey/result">调查结果</el-menu-item>
+                <el-menu-item index="/dashboard/survey/list">问卷列表</el-menu-item>
+                <el-menu-item index="/dashboard/survey/create">创建问卷</el-menu-item>
+                <el-menu-item index="/dashboard/survey/result">调查结果</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/evaluation">
+              <el-sub-menu index="/dashboard/evaluation">
                 <template #title>
                   <el-icon><Star /></el-icon>
                   <span>教学评价</span>
                 </template>
-                <el-menu-item index="/evaluation/list">评价列表</el-menu-item>
-                <el-menu-item index="/evaluation/analysis">评价分析</el-menu-item>
+                <el-menu-item index="/dashboard/evaluation/list">评价列表</el-menu-item>
+                <el-menu-item index="/dashboard/evaluation/analysis">评价分析</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/support">
+              <el-sub-menu index="/dashboard/support">
                 <template #title>
                   <el-icon><QuestionFilled /></el-icon>
                   <span>问题中心</span>
                 </template>
-                <el-menu-item index="/support/list">问题列表</el-menu-item>
-                <el-menu-item index="/support/faq">常见问题</el-menu-item>
+                <el-menu-item index="/dashboard/support/list">问题列表</el-menu-item>
+                <el-menu-item index="/dashboard/support/faq">常见问题</el-menu-item>
+              </el-sub-menu>
+              
+              <!-- 管理员专用菜单 -->
+              <el-sub-menu v-if="userStore.isAdmin" index="/dashboard/admin">
+                <template #title>
+                  <el-icon><Setting /></el-icon>
+                  <span>系统管理</span>
+                </template>
+                <el-menu-item index="/dashboard/admin/users">用户管理</el-menu-item>
+                <el-menu-item index="/dashboard/admin/settings">系统设置</el-menu-item>
+                <el-menu-item index="/dashboard/admin/course-audit">课程审核</el-menu-item>
+                <el-menu-item index="/dashboard/admin/monitor">系统监控</el-menu-item>
               </el-sub-menu>
             </el-menu>
           </el-scrollbar>
@@ -241,7 +253,7 @@
           type: 'warning'
         }).then(() => {
           userStore.logout()
-          router.push('/login')
+          router.push('/publicPortal')
         })
       }
   

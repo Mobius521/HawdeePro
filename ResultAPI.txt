@@ -1,0 +1,273 @@
+对接
+下面是针对你提供的 CourseController 类生成的 接口文档，采用标准 RESTful API 文档格式，适用于 Swagger、Postman 等工具，也方便前端开发者调用。
+
+🎓 课程管理模块接口文档（CourseController）
+●基础路径（Base Path）：/course
+●说明：提供课程的增删改查操作，支持按教师编号查询课程等功能。
+
+1. 🟢 添加课程
+●URL：/course/add
+●请求方式：POST
+●请求体类型：application/json
+●请求参数（Request Body）：
+
+{
+  "courseId": "C001",
+  "teacherId": "T123",
+  "subjectId": "S001",
+  "time": "周一第1-2节",
+  "evaluation": "优秀",
+  "classroom": "教室A101"
+}
+
+●响应数据（Response）：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "添加成功"
+}
+
+●说明：添加一门新的课程，courseId 可由前端生成或数据库自动生成（根据设计而定）。
+
+2. 🟡 修改课程
+●URL：/course/update
+●请求方式：PUT
+●请求体类型：application/json
+●请求参数（Request Body）：（不用都填入）
+
+{
+  "courseId": "C001",
+  "teacherId": "T123",
+  "subjectId": "S001",
+  "time": "周二第3-4节",
+  "evaluation": "良好",
+  "classroom": "教室B202"
+}
+
+●响应数据：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "修改成功"
+}
+
+●说明：修改已有课程的信息，courseId 必须存在。
+
+3. 🔴 删除课程
+●URL：/course/delete/{id}
+●请求方式：DELETE
+●路径参数：
+参数名	类型	说明
+id	String	要删除的课程ID
+●示例：/course/delete/C001
+●响应数据：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "删除成功"
+}
+
+●说明：根据课程编号删除课程。
+
+4. 🔍 根据课程编号获取课程信息
+●URL：/course/get/{id}
+●请求方式：GET
+●路径参数：
+参数名	类型	说明
+id	String	课程编号
+●示例：/course/get/C001
+●响应数据：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": {
+    "courseId": "C001",
+    "teacherId": "T123",
+    "subjectId": "S001",
+    "time": "周一第1-2节",
+    "evaluation": "优秀",
+    "classroom": "教室A101"
+  }
+}
+
+●说明：根据课程编号精确查询课程详情。
+
+5. 📋 查询所有课程
+●URL：/course/list
+●请求方式：GET
+●响应数据：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "courseId": "C001",
+      "teacherId": "T123",
+      "subjectId": "S001",
+      "time": "周一第1-2节",
+      "evaluation": "优秀",
+      "classroom": "教室A101"
+    },
+    {
+      "courseId": "C002",
+      "teacherId": "T124",
+      "subjectId": "S002",
+      "time": "周三第5-6节",
+      "evaluation": "良好",
+      "classroom": "教室B202"
+    }
+  ]
+}
+
+●说明：返回系统中所有课程的完整信息列表。
+
+6. 👨‍🏫 根据教师编号查询课程
+●URL：/course/teacher/{teacherId}
+●请求方式：GET
+●路径参数：
+参数名	类型	说明
+teacherId	String	教师编号
+●示例：/course/teacher/T123
+●响应数据：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "courseId": "C001",
+      "teacherId": "T123",
+      "subjectId": "S001",
+      "time": "周一第1-2节",
+      "evaluation": "优秀",
+      "classroom": "教室A101"
+    }
+  ]
+}
+
+●说明：返回指定教师教授的所有课程列表。
+
+📦 错误响应示例
+
+{
+  "code": 1,
+  "message": "添加失败",
+  "data": null
+}
+
+●code=1 表示操作失败，message 返回失败原因。
+
+📘 补充说明
+●所有接口返回统一格式：Result<T>，包含：
+○code: 0 成功，1 失败
+○message: 操作提示语
+○data: 具体返回的数据对象或字符串
+●参数校验建议在 Service 层或通过注解（如 @Valid）进行扩展。
+
+是否还需要我帮你生成 Swagger 注解版本 或 前端调用示例？
+
+
+
+
+
+
+
+
+
+
+
+
+以下是你提供的 OperationLogController 类对应的详细 接口文档，适用于后端接口说明、前端对接、Swagger/OpenAPI 生成等场景。
+
+🧾 操作日志管理模块接口文档（OperationLogController）
+●基础路径（Base Path）：/log
+●模块说明：提供对系统操作日志的查看、统计和添加功能，支持手动测试插入日志。
+
+1. 📋 查看所有操作日志
+●URL：/log/list
+●请求方式：GET
+●请求参数：无
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "logId": "123e4567-e89b-12d3-a456-426614174000",
+      "staffId": "S1001",
+      "operationTime": "2025-06-29T10:10:00.000+08:00",
+      "operationContent": "添加课程信息"
+    },
+    {
+      "logId": "223e4567-e89b-12d3-a456-426614174001",
+      "staffId": "S1002",
+      "operationTime": "2025-06-29T10:15:00.000+08:00",
+      "operationContent": "删除学生数据"
+    }
+  ]
+}
+
+●说明：返回系统中所有操作日志，按时间或记录顺序排列（排序逻辑可在 Service 实现中处理）。
+
+2. 🔢 获取日志总数
+●URL：/log/count
+●请求方式：GET
+●请求参数：无
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": 152
+}
+
+●说明：返回当前系统中操作日志的总条数，常用于仪表盘统计。
+
+3. 📝 新增操作日志（测试或手动记录）
+●URL：/log/add
+●请求方式：POST
+●请求体类型：application/json
+●请求参数（Request Body）：
+
+{
+  "staffId": "S1001",
+  "operationContent": "导入学生信息"
+}
+
+●⚠️ logId 和 operationTime 会在后台自动生成，无需前端传递。
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "添加成功"
+}
+
+●说明：适合在前端页面或系统测试过程中主动调用，记录某些操作行为。
+
+✅ 实体类说明：OperationLog
+字段名	类型	描述
+logId	String	日志主键，UUID生成
+staffId	String	操作人员编号
+operationTime	Date	操作发生时间（系统生成）
+operationContent	String	操作内容描述
+
+📦 统一响应格式说明（Result）
+所有接口返回如下格式：
+
+{
+  "code": 0,              // 0表示成功，1表示失败
+  "message": "操作成功",   // 提示信息
+  "data": ...             // 实际返回的数据对象或信息
+}
+
+
+
+如果你还需要我 加上 Swagger 注解版本 或 分页查询版本，可以继续告诉我。
+

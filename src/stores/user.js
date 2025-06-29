@@ -18,7 +18,11 @@ export const useUserStore = defineStore('user', {
   getters: {
     isLoggedIn: (state) => !!state.token,
     userName: (state) => state.userInfo.name || '未知用户',
-    userAvatar: (state) => state.userInfo.avatar || '/default-avatar.png'
+    userAvatar: (state) => state.userInfo.avatar || '/default-avatar.png',
+    userRole: (state) => state.userInfo.role || 'teacher',
+    isTeacher: (state) => state.userInfo.role === 'teacher',
+    isAssistant: (state) => state.userInfo.role === 'assistant',
+    isAdmin: (state) => state.userInfo.role === 'admin'
   },
 
   actions: {
@@ -36,6 +40,18 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         
         return { success: true }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    // 注册
+    async register(userData) {
+      try {
+        // 模拟注册API调用
+        const response = await this.mockRegister(userData)
+        
+        return { success: true, message: '注册成功' }
       } catch (error) {
         return { success: false, message: error.message }
       }
@@ -69,19 +85,46 @@ export const useUserStore = defineStore('user', {
     mockLogin(credentials) {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          if (credentials.username === 'teacher' && credentials.password === '123456') {
+          // 支持多角色登录
+          const users = {
+            'teacher': {
+              id: '1',
+              name: '张老师',
+              email: 'teacher@example.com',
+              avatar: '',
+              role: 'teacher',
+              department: '计算机学院',
+              phone: '13800138000',
+              permissions: ['course:read', 'course:write', 'student:read', 'grade:write', 'resource:manage']
+            },
+            'assistant': {
+              id: '2',
+              name: '李助教',
+              email: 'assistant@example.com',
+              avatar: '',
+              role: 'assistant',
+              department: '计算机学院',
+              phone: '13800138001',
+              permissions: ['course:read', 'student:read', 'grade:read', 'resource:read']
+            },
+            'admin': {
+              id: '3',
+              name: '王管理员',
+              email: 'admin@example.com',
+              avatar: '',
+              role: 'admin',
+              department: '信息中心',
+              phone: '13800138002',
+              permissions: ['system:manage', 'user:manage', 'course:audit', 'resource:audit']
+            }
+          }
+
+          const user = users[credentials.username]
+          if (user && credentials.password === '123456') {
             resolve({
               token: 'mock-jwt-token-' + Date.now(),
-              userInfo: {
-                id: '1',
-                name: '张老师',
-                email: 'teacher@example.com',
-                avatar: '',
-                role: 'teacher',
-                department: '计算机学院',
-                phone: '13800138000'
-              },
-              permissions: ['course:read', 'course:write', 'student:read', 'grade:write']
+              userInfo: user,
+              permissions: user.permissions
             })
           } else {
             reject(new Error('用户名或密码错误'))
@@ -90,11 +133,27 @@ export const useUserStore = defineStore('user', {
       })
     },
 
+    // 模拟注册API
+    mockRegister(userData) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // 模拟注册成功
+          console.log('注册用户数据:', userData)
+          resolve({
+            success: true,
+            message: '注册成功'
+          })
+        }, 1000)
+      })
+    },
+
     // 初始化用户信息
     initUserInfo() {
       const userInfo = localStorage.getItem('userInfo')
-      if (userInfo) {
+      const token = localStorage.getItem('userToken')
+      if (userInfo && token) {
         this.userInfo = JSON.parse(userInfo)
+        this.token = token
       }
     }
   }

@@ -5,7 +5,7 @@
         <div class="welcome-content">
           <div class="welcome-text">
             <h2>欢迎回来，{{ userStore.userName }}!</h2>
-            <p>今天是 {{ currentDate }}，祝您工作愉快！</p>
+            <p>今天是 {{ currentDate }}，您的身份是：{{ getRoleText(userStore.userRole) }}</p>
           </div>
           <div class="welcome-stats">
             <div class="stat-item">
@@ -125,7 +125,7 @@
             </div>
             <div class="quick-actions">
               <el-button
-                v-for="action in quickActions"
+                v-for="action in getQuickActions()"
                 :key="action.name"
                 :type="action.type"
                 class="action-button"
@@ -266,13 +266,47 @@
         ]
       })
   
-      // 快速操作
-      const quickActions = ref([
-        { name: '创建课程', icon: 'Plus', type: 'primary', path: '/course/create' },
-        { name: '布置作业', icon: 'EditPen', type: 'success', path: '/homework/create' },
-        { name: '上传资源', icon: 'Upload', type: 'warning', path: '/resource/upload' },
-        { name: '创建试卷', icon: 'Document', type: 'info', path: '/exam/paper' }
-      ])
+      // 获取角色文本
+      const getRoleText = (role) => {
+        const roleMap = {
+          'teacher': '教师',
+          'assistant': '助教',
+          'admin': '系统管理员'
+        }
+        return roleMap[role] || '未知角色'
+      }
+  
+      // 根据角色获取快速操作
+      const getQuickActions = () => {
+        const baseActions = [
+          { name: '查看课程', icon: 'Reading', type: 'primary', path: '/dashboard/course/list' },
+          { name: '查看资源', icon: 'FolderOpened', type: 'success', path: '/dashboard/resource/list' }
+        ]
+        
+        if (userStore.isTeacher) {
+          return [
+            ...baseActions,
+            { name: '创建课程', icon: 'Plus', type: 'primary', path: '/dashboard/course/create' },
+            { name: '布置作业', icon: 'EditPen', type: 'warning', path: '/dashboard/homework/create' },
+            { name: '上传资源', icon: 'Upload', type: 'info', path: '/dashboard/resource/upload' }
+          ]
+        } else if (userStore.isAssistant) {
+          return [
+            ...baseActions,
+            { name: '协助批改', icon: 'Check', type: 'warning', path: '/dashboard/homework/assist' },
+            { name: '查看成绩', icon: 'Document', type: 'info', path: '/dashboard/grade/view' }
+          ]
+        } else if (userStore.isAdmin) {
+          return [
+            { name: '用户管理', icon: 'User', type: 'primary', path: '/dashboard/admin/users' },
+            { name: '系统设置', icon: 'Setting', type: 'success', path: '/dashboard/admin/settings' },
+            { name: '课程审核', icon: 'Check', type: 'warning', path: '/dashboard/admin/course-audit' },
+            { name: '系统监控', icon: 'Monitor', type: 'info', path: '/dashboard/admin/monitor' }
+          ]
+        }
+        
+        return baseActions
+      }
   
       // 最近活动
       const recentActivities = ref([
@@ -365,7 +399,8 @@
         todayStats,
         stats,
         courseProgressOption,
-        quickActions,
+        getRoleText,
+        getQuickActions,
         recentActivities,
         todoList,
         notifications,
@@ -501,6 +536,23 @@
   
   .chart-container {
     padding: 20px 0;
+  }
+  
+  .chart-placeholder {
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    background: #fafafa;
+    border: 1px dashed #d9d9d9;
+    border-radius: 4px;
+  }
+  
+  .chart-placeholder p {
+    margin: 10px 0 0 0;
+    font-size: 14px;
   }
   
   .activity-list {

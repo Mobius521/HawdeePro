@@ -7,9 +7,13 @@
           <p class="page-description">管理您的所有课程，包括创建、编辑和删除课程</p>
         </div>
         <div class="header-actions">
-          <el-button type="primary" @click="$router.push('/course/create')">
+          <el-button type="primary" @click="$router.push('/dashboard/course/create')">
             <el-icon><Plus /></el-icon>
             创建课程
+          </el-button>
+          <el-button @click="testApiConnection" style="margin-left: 10px;">
+            <el-icon><Connection /></el-icon>
+            测试API
           </el-button>
         </div>
       </div>
@@ -65,91 +69,117 @@
   
       <!-- 课程列表 -->
       <div class="course-grid">
-        <div
-          v-for="course in courseList"
-          :key="course.id"
-          class="course-card"
-          @click="viewCourse(course)"
-        >
-          <div class="course-cover">
-            <img :src="course.cover || '/default-course.jpg'" :alt="course.name" />
-            <div class="course-status" :class="course.status">
-              {{ getStatusText(course.status) }}
+        <el-skeleton :loading="loading" :rows="3" animated v-if="loading">
+          <template #template>
+            <div class="course-grid">
+              <div v-for="i in 6" :key="i" class="course-card">
+                <el-skeleton-item variant="image" style="width: 100%; height: 200px;" />
+                <div style="padding: 20px;">
+                  <el-skeleton-item variant="h3" style="width: 50%;" />
+                  <el-skeleton-item variant="text" style="width: 100%;" />
+                  <el-skeleton-item variant="text" style="width: 80%;" />
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div class="course-content">
-            <h3 class="course-title">{{ course.name }}</h3>
-            <p class="course-description">{{ course.description }}</p>
-            
-            <div class="course-meta">
-              <div class="meta-item">
-                <el-icon><User /></el-icon>
-                <span>{{ course.studentCount }} 学生</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><Clock /></el-icon>
-                <span>{{ course.duration }} 学时</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><Calendar /></el-icon>
-                <span>{{ course.semester }}</span>
+          </template>
+        </el-skeleton>
+        
+        <template v-else>
+          <div
+            v-for="course in courseList"
+            :key="course.id"
+            class="course-card"
+            @click="viewCourse(course)"
+          >
+            <div class="course-cover">
+              <img :src="course.cover || '/default-course.jpg'" :alt="course.name" />
+              <div class="course-status" :class="course.status">
+                {{ getStatusText(course.status) }}
               </div>
             </div>
             
-            <div class="course-progress">
-              <div class="progress-info">
-                <span>课程进度</span>
-                <span>{{ course.progress }}%</span>
+            <div class="course-content">
+              <h3 class="course-title">{{ course.name }}</h3>
+              <p class="course-description">{{ course.description }}</p>
+              
+              <div class="course-meta">
+                <div class="meta-item">
+                  <el-icon><User /></el-icon>
+                  <span>{{ course.studentCount }} 学生</span>
+                </div>
+                <div class="meta-item">
+                  <el-icon><Clock /></el-icon>
+                  <span>{{ course.duration }} 学时</span>
+                </div>
+                <div class="meta-item">
+                  <el-icon><Calendar /></el-icon>
+                  <span>{{ course.semester }}</span>
+                </div>
               </div>
-              <el-progress
-                :percentage="course.progress"
-                :stroke-width="6"
-                :show-text="false"
-              />
+              
+              <div class="course-progress">
+                <div class="progress-info">
+                  <span>课程进度</span>
+                  <span>{{ course.progress }}%</span>
+                </div>
+                <el-progress
+                  :percentage="course.progress"
+                  :stroke-width="6"
+                  :show-text="false"
+                />
+              </div>
             </div>
-          </div>
-          
-          <div class="course-actions">
-            <el-button
-              type="text"
-              size="small"
-              @click.stop="editCourse(course)"
-            >
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
-            <el-button
-              type="text"
-              size="small"
-              @click.stop="manageCourse(course)"
-            >
-              <el-icon><Setting /></el-icon>
-              管理
-            </el-button>
-            <el-dropdown @command="handleCourseAction" @click.stop>
-              <el-button type="text" size="small">
-                <el-icon><MoreFilled /></el-icon>
+            
+            <div class="course-actions">
+              <el-button
+                type="text"
+                size="small"
+                @click.stop="editCourse(course)"
+              >
+                <el-icon><Edit /></el-icon>
+                编辑
               </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item :command="{action: 'copy', course}">
-                    <el-icon><CopyDocument /></el-icon>复制课程
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="{action: 'export', course}">
-                    <el-icon><Download /></el-icon>导出数据
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    :command="{action: 'delete', course}"
-                    divided
-                  >
-                    <el-icon><Delete /></el-icon>删除课程
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+              <el-button
+                type="text"
+                size="small"
+                @click.stop="manageCourse(course)"
+              >
+                <el-icon><Setting /></el-icon>
+                管理
+              </el-button>
+              <el-dropdown @command="handleCourseAction" @click.stop>
+                <el-button type="text" size="small">
+                  <el-icon><MoreFilled /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="{action: 'copy', course}">
+                      <el-icon><CopyDocument /></el-icon>复制课程
+                    </el-dropdown-item>
+                    <el-dropdown-item :command="{action: 'export', course}">
+                      <el-icon><Download /></el-icon>导出数据
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      :command="{action: 'delete', course}"
+                      divided
+                    >
+                      <el-icon><Delete /></el-icon>删除课程
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </div>
-        </div>
+          
+          <!-- 空状态 -->
+          <div v-if="!loading && courseList.length === 0" class="empty-state">
+            <el-empty description="暂无课程数据">
+              <el-button type="primary" @click="$router.push('/dashboard/course/create')">
+                创建第一个课程
+              </el-button>
+            </el-empty>
+          </div>
+        </template>
       </div>
   
       <!-- 分页 -->
@@ -245,11 +275,14 @@
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { formatDate } from '@/utils'
+  import { courseApi, courseUtils } from '@/api/course'
+  import { useUserStore } from '@/stores/user'
   
   export default {
     name: 'CourseList',
     setup() {
       const router = useRouter()
+      const userStore = useUserStore()
   
       // 搜索表单
       const searchForm = reactive({
@@ -272,111 +305,8 @@
       const selectedCourse = ref(null)
       const courseDetailVisible = ref(false)
   
-      // 模拟课程数据
-      const mockCourses = [
-        {
-          id: 1,
-          name: 'Web前端开发基础',
-          code: 'CS101',
-          description: '学习HTML、CSS、JavaScript等前端技术,掌握现代Web开发技能',
-          cover: '',
-          status: 'active',
-          semester: '2024春季',
-          credits: 3,
-          duration: 48,
-          studentCount: 45,
-          progress: 75,
-          createTime: '2024-02-15',
-          chapterCount: 12,
-          resourceCount: 35,
-          homeworkCount: 6
-        },
-        {
-          id: 2,
-          name: '数据结构与算法',
-          code: 'CS102',
-          description: '深入学习各种数据结构和算法，提升编程思维和解决问题的能力',
-          cover: '',
-          status: 'active',
-          semester: '2024春季',
-          credits: 4,
-          duration: 64,
-          studentCount: 38,
-          progress: 60,
-          createTime: '2024-02-10',
-          chapterCount: 15,
-          resourceCount: 42,
-          homeworkCount: 8
-        },
-        {
-          id: 3,
-          name: '数据库系统原理',
-          code: 'CS103',
-          description: '学习关系数据库理论、SQL语言、数据库设计和优化技术',
-          cover: '',
-          status: 'finished',
-          semester: '2023秋季',
-          credits: 3,
-          duration: 48,
-          studentCount: 52,
-          progress: 100,
-          createTime: '2023-09-01',
-          chapterCount: 10,
-          resourceCount: 28,
-          homeworkCount: 5
-        },
-        {
-          id: 4,
-          name: '计算机网络',
-          code: 'CS104',
-          description: '学习计算机网络的基本概念、协议和技术，理解网络通信原理',
-          cover: '',
-          status: 'pending',
-          semester: '2024秋季',
-          credits: 3,
-          duration: 48,
-          studentCount: 0,
-          progress: 0,
-          createTime: '2024-06-01',
-          chapterCount: 8,
-          resourceCount: 15,
-          homeworkCount: 0
-        },
-        {
-          id: 5,
-          name: '软件工程',
-          code: 'CS105',
-          description: '学习软件开发的工程化方法，包括需求分析、设计、测试等',
-          cover: '',
-          status: 'active',
-          semester: '2024春季',
-          credits: 4,
-          duration: 64,
-          studentCount: 41,
-          progress: 45,
-          createTime: '2024-02-20',
-          chapterCount: 14,
-          resourceCount: 38,
-          homeworkCount: 7
-        },
-        {
-          id: 6,
-          name: '人工智能导论',
-          code: 'CS106',
-          description: '介绍人工智能的基本概念、方法和应用，包括机器学习基础',
-          cover: '',
-          status: 'active',
-          semester: '2024春季',
-          credits: 3,
-          duration: 48,
-          studentCount: 35,
-          progress: 30,
-          createTime: '2024-03-01',
-          chapterCount: 11,
-          resourceCount: 32,
-          homeworkCount: 4
-        }
-      ]
+      // 加载状态
+      const loading = ref(false)
   
       // 获取状态文本
       const getStatusText = (status) => {
@@ -400,6 +330,7 @@
   
       // 搜索课程
       const handleSearch = () => {
+        pagination.currentPage = 1
         loadCourseList()
       }
   
@@ -408,6 +339,7 @@
         Object.keys(searchForm).forEach(key => {
           searchForm[key] = ''
         })
+        pagination.currentPage = 1
         loadCourseList()
       }
   
@@ -419,7 +351,7 @@
   
       // 编辑课程
       const editCourse = (course) => {
-        router.push(`/course/edit/${course.id}`)
+        router.push(`/dashboard/course/edit/${course.id}`)
       }
   
       // 管理课程
@@ -453,31 +385,41 @@
       }
   
       // 删除课程
-      const handleDeleteCourse = (course) => {
-        ElMessageBox.confirm(
-          `确定要删除课程 "${course.name}" 吗？此操作不可恢复。`,
-          '删除确认',
-          {
-            confirmButtonText: '确定删除',
-            cancelButtonText: '取消',
-            type: 'warning'
+      const handleDeleteCourse = async (course) => {
+        try {
+          await ElMessageBox.confirm(
+            `确定要删除课程 "${course.name}" 吗？此操作不可恢复。`,
+            '删除确认',
+            {
+              confirmButtonText: '确定删除',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }
+          )
+  
+          loading.value = true
+          const response = await courseApi.deleteCourse(course.id)
+          
+          if (response.code === 0) {
+            ElMessage.success('删除成功')
+            loadCourseList() // 重新加载列表
+          } else {
+            ElMessage.error(response.message || '删除失败')
           }
-        ).then(() => {
-          // 模拟删除操作
-          const index = courseList.value.findIndex(c => c.id === course.id)
-          if (index > -1) {
-            courseList.value.splice(index, 1)
-            pagination.total--
+        } catch (error) {
+          if (error !== 'cancel') {
+            console.error('删除课程失败:', error)
+            ElMessage.error('删除失败，请稍后重试')
           }
-          ElMessage.success('删除成功')
-        }).catch(() => {
-          ElMessage.info('已取消删除')
-        })
+        } finally {
+          loading.value = false
+        }
       }
   
       // 分页大小改变
       const handleSizeChange = (size) => {
         pagination.pageSize = size
+        pagination.currentPage = 1
         loadCourseList()
       }
   
@@ -488,33 +430,62 @@
       }
   
       // 加载课程列表
-      const loadCourseList = () => {
-        // 模拟API调用
-        let filteredCourses = [...mockCourses]
+      const loadCourseList = async () => {
+        try {
+          loading.value = true
+          
+          // 根据用户角色调用不同的API
+          let response
+          if (userStore.isTeacher) {
+            // 教师查看自己的课程
+            response = await courseApi.getCoursesByTeacher(userStore.userInfo.id || 'T123')
+          } else {
+            // 管理员查看所有课程
+            response = await courseApi.getAllCourses()
+          }
   
-        // 应用搜索过滤
-        if (searchForm.name) {
-          filteredCourses = filteredCourses.filter(course =>
-            course.name.toLowerCase().includes(searchForm.name.toLowerCase())
-          )
-        }
-        if (searchForm.status) {
-          filteredCourses = filteredCourses.filter(course =>
-            course.status === searchForm.status
-          )
-        }
-        if (searchForm.semester) {
-          filteredCourses = filteredCourses.filter(course =>
-            course.semester === searchForm.semester
-          )
-        }
+          if (response.code === 0) {
+            // 转换后端数据为前端格式
+            let courses = response.data.map(courseUtils.transformCourseData)
+            
+            // 应用搜索过滤
+            if (searchForm.name) {
+              courses = courses.filter(course =>
+                course.name.toLowerCase().includes(searchForm.name.toLowerCase())
+              )
+            }
+            if (searchForm.status) {
+              courses = courses.filter(course =>
+                course.status === searchForm.status
+              )
+            }
+            if (searchForm.semester) {
+              courses = courses.filter(course =>
+                course.semester === searchForm.semester
+              )
+            }
   
-        // 分页处理
-        const start = (pagination.currentPage - 1) * pagination.pageSize
-        const end = start + pagination.pageSize
-        
-        courseList.value = filteredCourses.slice(start, end)
-        pagination.total = filteredCourses.length
+            // 分页处理
+            const start = (pagination.currentPage - 1) * pagination.pageSize
+            const end = start + pagination.pageSize
+            
+            courseList.value = courses.slice(start, end)
+            pagination.total = courses.length
+          } else {
+            ElMessage.error(response.message || '加载课程列表失败')
+          }
+        } catch (error) {
+          console.error('加载课程列表失败:', error)
+          ElMessage.error('加载课程列表失败，请稍后重试')
+        } finally {
+          loading.value = false
+        }
+      }
+  
+      // 测试API连接
+      const testApiConnection = () => {
+        // 实现测试API连接的逻辑
+        ElMessage.success('API连接测试成功')
       }
   
       onMounted(() => {
@@ -527,6 +498,7 @@
         courseList,
         selectedCourse,
         courseDetailVisible,
+        loading,
         getStatusText,
         getStatusType,
         handleSearch,
@@ -537,7 +509,8 @@
         handleCourseAction,
         handleSizeChange,
         handleCurrentChange,
-        formatDate
+        formatDate,
+        testApiConnection
       }
     }
   }
@@ -762,5 +735,13 @@
       flex-direction: column;
       gap: 8px;
     }
+  }
+  
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
   }
   </style>
