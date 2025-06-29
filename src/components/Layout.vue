@@ -94,8 +94,10 @@
                   <el-icon><Document /></el-icon>
                   <span>试题试卷</span>
                 </template>
-                <el-menu-item index="/exam/question">题库管理</el-menu-item>
-                <el-menu-item index="/exam/paper">试卷管理</el-menu-item>
+                <el-menu-item index="/exam/list">题库管理</el-menu-item>
+                <el-menu-item index="/exam/upload">上传试卷</el-menu-item>
+                <el-menu-item index="/exam/pigai">批改试卷</el-menu-item>
+                <el-menu-item index="/exam/update">修改试卷</el-menu-item>
               </el-sub-menu>
               
               <el-sub-menu index="/homework">
@@ -104,10 +106,18 @@
                   <span>作业管理</span>
                 </template>
                 <el-menu-item index="/homework/list">作业列表</el-menu-item>
-                <el-menu-item index="/homework/create">布置作业</el-menu-item>
                 <el-menu-item index="/homework/review">作业批改</el-menu-item>
               </el-sub-menu>
-              
+              <el-sub-menu index="/live">
+                <template #title>
+                  <el-icon><EditPen /></el-icon>
+                  <span>直播管理</span>
+                </template>
+                <el-menu-item index="/live/list">直播1</el-menu-item>
+                
+                <el-menu-item index="/live/test">直播2</el-menu-item>
+
+              </el-sub-menu>
               <el-sub-menu index="/assessment">
                 <template #title>
                   <el-icon><Checked /></el-icon>
