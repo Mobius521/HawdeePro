@@ -30,6 +30,13 @@ import UserManagement from '@/views/admin/UserManagement.vue'
 import SystemSettings from '@/views/admin/SystemSettings.vue'
 import CourseAudit from '@/views/admin/CourseAudit.vue'
 import SystemMonitor from '@/views/admin/SystemMonitor.vue'
+import ExamUpload from '@/views/Exam/ExamUpload.vue'
+import ExamEditDialog from '@/views/Exam/ExamEditDialog.vue'
+import ExamList from '../views/Exam/ExamList.vue'
+import AssignmentList from '@/views/Assign/AssignmentList.vue'
+import LiveList from '@/views/live/LiveCourseList.vue'
+import livecreate from '@/views/live/CreateLiveDialog.vue'
+import LiveRoom from '@/views/live/EditLiveDialog.vue'
 
 const routes = [
   {
@@ -173,6 +180,7 @@ const routes = [
           }
         ]
       },
+
       // 管理员功能
       {
         path: 'admin',
@@ -201,7 +209,99 @@ const routes = [
             meta: { title: '系统监控' }
           }
         ]
+      },
+
+      {
+        path: 'exam',
+        name: 'Exam',
+        redirect: '/exam/list',
+        meta: { title: '', icon: 'Star' },
+        children: [
+          {
+            path: 'list',
+            component: ExamList,
+            meta: { title: '试卷管理' }
+          },
+          {
+            path: 'upload',
+            component: ExamUpload,
+            meta: { title: '上传试卷' }
+          },
+          {
+            path: 'update',
+            component: ExamEditDialog,
+            meta: { title: '修改试卷' }
+          }
+        ]
+      } ,
+      
+      {
+        path: 'homework',
+        name: 'Homework',
+        redirect: '/homework/list',
+        meta: { title: '', icon: 'Star' },
+        children: [
+          {
+            path: 'list',
+            component: AssignmentList,
+            meta: { title: '作业管理' }
+          },
+          {
+            path: 'review',
+            component: Asspigai,
+            meta: { title: '批改作业' }
+          }
+        ]
+      },
+
+      {
+        path: 'live',
+        name: 'live',
+        redirect: '/live',
+        meta: { title: '', icon: 'Star' },
+        children: [
+          {
+            path: 'list',
+            component: LiveList,
+            meta: { title: '作业管理' }
+          },
+          {
+            path: 'room/:id',
+            name: 'LiveRoom',
+            component: livecreate,
+            props:true,
+            meta: { title: '批改作业' }
+          },{
+            path: 'test',
+            name: 'Live',
+            component: livecreate,
+            props: true,
+            meta: { title: '批改作业' }
+            
+          }
+        ]
       }
+      // 问题中心
+      // {
+      //   path: 'support',
+      //   name: 'Support',
+      //   redirect: '/support/list',
+      //   meta: { title: '问题中心', icon: 'QuestionFilled' },
+      //   children: [
+      //     {
+      //       path: 'list',
+      //       name: 'SupportList',
+      //       component: () => import('@/views/support/List.vue'),
+      //       meta: { title: '问题列表' }
+      //     },
+      //     {
+      //       path: 'faq',
+      //       name: 'FAQ',
+      //       component: () => import('@/views/support/FAQ.vue'),
+      //       meta: { title: '常见问题' }
+      //     }
+      //   ]
+      // }
     ]
   }
 ]
