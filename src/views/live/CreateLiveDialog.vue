@@ -224,17 +224,20 @@ onBeforeUnmount(() => { leaveChannel() })
   overflow: hidden;
   background-color: #000;
 }
+
 .video-area {
   width: 100%;
   height: 100%;
   position: relative;
 }
+
 .video-box {
   width: 100%;
   height: 100%;
   object-fit: cover;
   background-color: #000;
 }
+
 .top-bar {
   position: absolute;
   top: 10px;
@@ -247,6 +250,7 @@ onBeforeUnmount(() => { leaveChannel() })
   border-radius: 8px;
   align-items: center;
 }
+
 .toolbox {
   position: absolute;
   bottom: 80px;
@@ -259,6 +263,7 @@ onBeforeUnmount(() => { leaveChannel() })
   padding: 10px;
   border-radius: 8px;
 }
+
 .chat-box {
   position: absolute;
   right: 10px;
@@ -275,6 +280,7 @@ onBeforeUnmount(() => { leaveChannel() })
   cursor: default;
   user-select: none;
 }
+
 .chat-header {
   font-weight: bold;
   font-size: 18px;
@@ -282,11 +288,13 @@ onBeforeUnmount(() => { leaveChannel() })
   cursor: move;
   user-select: none;
 }
+
 .chat-content {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -295,9 +303,11 @@ onBeforeUnmount(() => { leaveChannel() })
   font-size: 14px;
   color: #222;
 }
+
 .chat-message {
   margin-bottom: 6px;
 }
+
 .chat-input {
   display: flex;
   gap: 5px;
