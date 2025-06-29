@@ -78,7 +78,7 @@ const routes = [
       {
         path: 'course',
         name: 'Course',
-        redirect: '/course/list',
+        redirect: '/dashboard/course/list',
         meta: { title: '课程管理', icon: 'Reading' },
         children: [
           {
@@ -102,7 +102,7 @@ const routes = [
       {
         path: 'resource',
         name: 'Resource',
-        redirect: '/resource/list',
+        redirect: '/dashboard/resource/list',
         meta: { title: '资源管理', icon: 'FolderOpened' },
         children: [
           {
@@ -122,7 +122,7 @@ const routes = [
       {
         path: 'training',
         name: 'Training',
-        redirect: '/training/list',
+        redirect: '/dashboard/training/list',
         meta: { title: '实训管理', icon: 'Tools', roles: ['teacher'] },
         children: [
           {
@@ -141,7 +141,7 @@ const routes = [
       {
         path: 'survey',
         name: 'Survey',
-        redirect: '/survey/list',
+        redirect: '/dashboard/survey/list',
         meta: { title: '问卷调查', icon: 'List', roles: ['teacher'] },
         children: [
           {
@@ -165,7 +165,7 @@ const routes = [
       {
         path: 'evaluation',
         name: 'Evaluation',
-        redirect: '/evaluation/list',
+        redirect: '/dashboard/evaluation/list',
         meta: { title: '教学评价', icon: 'Star', roles: ['teacher'] },
         children: [
           {
@@ -214,13 +214,13 @@ const routes = [
       {
         path: 'exam',
         name: 'Exam',
-        redirect: '/exam/list',
-        meta: { title: '', icon: 'Star' },
+        redirect: '/dashboard/exam/list',
+        meta: { title: '试卷管理', icon: 'Document' },
         children: [
           {
             path: 'list',
             component: ExamList,
-            meta: { title: '试卷管理' }
+            meta: { title: '试卷列表' }
           },
           {
             path: 'upload',
@@ -233,18 +233,18 @@ const routes = [
             meta: { title: '修改试卷' }
           }
         ]
-      } ,
+      },
       
       {
         path: 'homework',
         name: 'Homework',
-        redirect: '/homework/list',
-        meta: { title: '', icon: 'Star' },
+        redirect: '/dashboard/homework/list',
+        meta: { title: '作业管理', icon: 'EditPen' },
         children: [
           {
             path: 'list',
             component: AssignmentList,
-            meta: { title: '作业管理' }
+            meta: { title: '作业列表' }
           },
           {
             path: 'review',
@@ -256,28 +256,28 @@ const routes = [
 
       {
         path: 'live',
-        name: 'live',
-        redirect: '/live',
-        meta: { title: '', icon: 'Star' },
+        name: 'Live',
+        redirect: '/dashboard/live/list',
+        meta: { title: '直播管理', icon: 'VideoPlay' },
         children: [
           {
             path: 'list',
             component: LiveList,
-            meta: { title: '作业管理' }
+            meta: { title: '直播列表' }
           },
           {
             path: 'room/:id',
             name: 'LiveRoom',
             component: livecreate,
-            props:true,
-            meta: { title: '批改作业' }
-          },{
+            props: true,
+            meta: { title: '直播房间' }
+          },
+          {
             path: 'test',
-            name: 'Live',
+            name: 'LiveTest',
             component: livecreate,
             props: true,
-            meta: { title: '批改作业' }
-            
+            meta: { title: '直播测试' }
           }
         ]
       }

@@ -31,7 +31,7 @@
               <el-input
                 v-model="newQuestion"
                 placeholder="输入你的问题"
-                @keyup.enter.native="sendQuestion"
+                @keyup.enter="sendQuestion"
                 clearable
               />
               <el-button type="primary" @click="sendQuestion" :disabled="!newQuestion.trim()">发送</el-button>
@@ -75,14 +75,15 @@
   </template>
   
   <script setup>
-  import { ref,defineProps, watch } from 'vue'
+  import { ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  
   const props = defineProps({
-  id: {
-    type: [String, Number],
-    required: true
-  }
-})
+    id: {
+      type: [String, Number],
+      required: true
+    }
+  })
   // 课程名可以通过props或路由参数传入，这里简单模拟
   const courseTitle = ref('高等数学直播课')
   

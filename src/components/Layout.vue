@@ -92,12 +92,10 @@
               <el-sub-menu index="/dashboard/exam">
                 <template #title>
                   <el-icon><Document /></el-icon>
-                  <span>试题试卷</span>
+                  <span>试卷管理</span>
                 </template>
-                <el-menu-item index="/exam/list">题库管理</el-menu-item>
-                <el-menu-item index="/exam/upload">上传试卷</el-menu-item>
-                <el-menu-item index="/exam/pigai">批改试卷</el-menu-item>
-                <el-menu-item index="/exam/update">修改试卷</el-menu-item>
+                <el-menu-item index="/dashboard/exam/list">试卷列表</el-menu-item>
+                <el-menu-item index="/dashboard/exam/upload">上传试卷</el-menu-item>
               </el-sub-menu>
               
               <el-sub-menu index="/dashboard/homework">
@@ -105,20 +103,20 @@
                   <el-icon><EditPen /></el-icon>
                   <span>作业管理</span>
                 </template>
-                <el-menu-item index="/homework/list">作业列表</el-menu-item>
-                <el-menu-item index="/homework/review">作业批改</el-menu-item>
+                <el-menu-item index="/dashboard/homework/list">作业列表</el-menu-item>
+                <el-menu-item index="/dashboard/homework/review">批改作业</el-menu-item>
               </el-sub-menu>
-              <el-sub-menu index="/live">
+              
+              <el-sub-menu index="/dashboard/live">
                 <template #title>
-                  <el-icon><EditPen /></el-icon>
+                  <el-icon><VideoPlay /></el-icon>
                   <span>直播管理</span>
                 </template>
-                <el-menu-item index="/live/list">直播1</el-menu-item>
-                
-                <el-menu-item index="/live/test">直播2</el-menu-item>
-
+                <el-menu-item index="/dashboard/live/list">直播列表</el-menu-item>
+                <el-menu-item index="/dashboard/live/test">直播测试</el-menu-item>
               </el-sub-menu>
-              <el-sub-menu index="/assessment">
+              
+              <el-sub-menu index="/dashboard/assessment">
                 <template #title>
                   <el-icon><Checked /></el-icon>
                   <span>测评管理</span>
