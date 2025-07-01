@@ -3,28 +3,24 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 
 import ExamView from '../views/Exam/ExamList.vue'
-import Assignment from '../views/Assign/AssPublish.vue'
+import Assignment from '../views/Assign/Asspublic.vue'
 import Asspigai from '../views/Assign/Asspigai.vue'
 import Assupdate from '../views/Assign/Assupdate.vue'
 import evaluate from '../views/evaluate.vue'
-import survey from '../views/survey/SurveyManage.vue'
 import Layout from '@/components/Layout.vue'
 import Login from '@/views/Login.vue'
 import register from '@/views/Register.vue'
 import Dashboard from '@/views/Dashboard.vue'
+import Profile from '@/views/Profile.vue'
 import CourseList from '@/views/course/List.vue'
 import CourseCreate from '@/views/course/createCourse.vue'
 import CourseEdit from '@/views/course/editCourse.vue'
+import CourseSchedule from '@/views/course/Schedule.vue'
 import ResourceList from '@/views/resources/List.vue'  
 import ResourceUpload from '@/views/resources/Upload.vue'
-import TrainingList from '@/views/training/List.vue'    
-import TrainingCreate from '@/views/training/Create.vue'
-import SurveyList from '@/views/survey/List.vue'
-import SurveyCreate from '@/views/survey/Create.vue'
-import SurveyResult from '@/views/survey/Result.vue'
 import EvaluationList from '@/views/evaluation/List.vue'
 import EvaluationAnalysis from '@/views/evaluation/Analysis.vue'
-import PortalIndex from '@/views/portal/index.vue'  
+import PortalIndex from '@/views/portal/AdminPortal.vue'  
 import publicPortal from '@/views/portal/publicPortal.vue'
 import UserManagement from '@/views/admin/UserManagement.vue'
 import SystemSettings from '@/views/admin/SystemSettings.vue'
@@ -37,6 +33,8 @@ import AssignmentList from '@/views/Assign/AssignmentList.vue'
 import LiveList from '@/views/live/LiveCourseList.vue'
 import livecreate from '@/views/live/CreateLiveDialog.vue'
 import LiveRoom from '@/views/live/EditLiveDialog.vue'
+import LogManagement from '@/views/Log/log.vue'
+import AssignmentStatistics from '@/views/Assign/AssignmentStatistics.vue'
 
 const routes = [
   {
@@ -68,6 +66,12 @@ const routes = [
         component: Dashboard,
         meta: { title: '工作台', icon: 'House' }
       },
+      // 个人中心
+      {
+        path: 'profile',
+        component: Profile,
+        meta: { title: '个人中心', icon: 'User' }
+      },
       // 网站门户
       {
         path: 'portal',
@@ -78,7 +82,7 @@ const routes = [
       {
         path: 'course',
         name: 'Course',
-        redirect: '/dashboard/course/list',
+        redirect: 'list',
         meta: { title: '课程管理', icon: 'Reading' },
         children: [
           {
@@ -95,6 +99,11 @@ const routes = [
             path: 'edit/:id',
             component: CourseEdit,
             meta: { title: '编辑课程', roles: ['teacher'] }
+          },
+          {
+            path: 'schedule',
+            component: CourseSchedule,
+            meta: { title: '课程表' }
           }
         ]
       },
@@ -102,7 +111,7 @@ const routes = [
       {
         path: 'resource',
         name: 'Resource',
-        redirect: '/dashboard/resource/list',
+        redirect: 'list',
         meta: { title: '资源管理', icon: 'FolderOpened' },
         children: [
           {
@@ -118,65 +127,23 @@ const routes = [
         ]
       },
       
-      // 实训管理
+
+      // 学情分析
       {
-        path: 'training',
-        name: 'Training',
-        redirect: '/dashboard/training/list',
-        meta: { title: '实训管理', icon: 'Tools', roles: ['teacher'] },
-        children: [
-          {
-            path: 'list',
-            component: TrainingList,
-            meta: { title: '实训项目' }
-          },
-          {
-            path: 'create',
-            component: TrainingCreate,
-            meta: { title: '创建实训' }
-          }
-        ]
-      },
-      // 问卷调查管理
-      {
-        path: 'survey',
-        name: 'Survey',
-        redirect: '/dashboard/survey/list',
-        meta: { title: '问卷调查', icon: 'List', roles: ['teacher'] },
-        children: [
-          {
-            path: 'list',
-            component: SurveyList,
-            meta: { title: '问卷列表' }
-          },
-          {
-            path: 'create',
-            component: SurveyCreate,
-            meta: { title: '创建问卷' }
-          },
-          {
-            path: 'result',
-            component: SurveyResult,
-            meta: { title: '调查结果' }
-          }
-        ]
-      },
-      // 教学效果评价
-      {
-        path: 'evaluation',
-        name: 'Evaluation',
-        redirect: '/dashboard/evaluation/list',
-        meta: { title: '教学评价', icon: 'Star', roles: ['teacher'] },
+        path: 'analysis',
+        name: 'Analysis',
+        redirect: 'list',
+        meta: { title: '学情分析', icon: 'Star', roles: ['teacher'] },
         children: [
           {
             path: 'list',
             component: EvaluationList,
-            meta: { title: '评价列表' }
+            meta: { title: '分析列表' }
           },
           {
-            path: 'analysis',
+            path: 'detail',
             component: EvaluationAnalysis,
-            meta: { title: '评价分析' }
+            meta: { title: '分析详情' }
           }
         ]
       },
@@ -185,7 +152,7 @@ const routes = [
       {
         path: 'admin',
         name: 'Admin',
-        redirect: '/dashboard/admin/users',
+        redirect: 'users',
         meta: { title: '系统管理', icon: 'Setting', roles: ['admin'] },
         children: [
           {
@@ -211,16 +178,24 @@ const routes = [
         ]
       },
 
+      // 日志管理
+      {
+        path: 'log',
+        name: 'Log',
+        component: LogManagement,
+        meta: { title: '日志管理', icon: 'Document' }
+      },
+
       {
         path: 'exam',
         name: 'Exam',
-        redirect: '/dashboard/exam/list',
-        meta: { title: '试卷管理', icon: 'Document' },
+        redirect: 'list',
+        meta: { title: '试卷管理', icon: 'EditPen' },
         children: [
           {
             path: 'list',
             component: ExamList,
-            meta: { title: '试卷列表' }
+            meta: { title: '试卷管理' }
           },
           {
             path: 'upload',
@@ -233,31 +208,36 @@ const routes = [
             meta: { title: '修改试卷' }
           }
         ]
-      },
+      } ,
       
       {
         path: 'homework',
         name: 'Homework',
-        redirect: '/dashboard/homework/list',
+        redirect: 'list',
         meta: { title: '作业管理', icon: 'EditPen' },
         children: [
           {
             path: 'list',
             component: AssignmentList,
-            meta: { title: '作业列表' }
+            meta: { title: '作业管理' }
           },
           {
             path: 'review',
             component: Asspigai,
             meta: { title: '批改作业' }
+          },
+          {
+            path: 'statistics',
+            component: AssignmentStatistics,
+            meta: { title: '作业统计' }
           }
         ]
       },
 
       {
         path: 'live',
-        name: 'Live',
-        redirect: '/dashboard/live/list',
+        name: 'live',
+        redirect: 'list',
         meta: { title: '直播管理', icon: 'VideoPlay' },
         children: [
           {
@@ -269,39 +249,39 @@ const routes = [
             path: 'room/:id',
             name: 'LiveRoom',
             component: livecreate,
-            props: true,
+            props:true,
             meta: { title: '直播房间' }
-          },
-          {
+          },{
             path: 'test',
-            name: 'LiveTest',
+            name: 'Live',
             component: livecreate,
             props: true,
             meta: { title: '直播测试' }
+            
           }
         ]
       }
-      // 问题中心
+      // 信息中心
       // {
-      //   path: 'support',
-      //   name: 'Support',
-      //   redirect: '/support/list',
-      //   meta: { title: '问题中心', icon: 'QuestionFilled' },
+      //   path: 'info',
+      //   name: 'Info',
+      //   redirect: '/info/list',
+      //   meta: { title: '信息中心', icon: 'MessageBox' },
       //   children: [
       //     {
       //       path: 'list',
-      //       name: 'SupportList',
+      //       name: 'InfoList',
       //       component: () => import('@/views/support/List.vue'),
-      //       meta: { title: '问题列表' }
+      //       meta: { title: '信息列表' }
       //     },
       //     {
       //       path: 'faq',
       //       name: 'FAQ',
       //       component: () => import('@/views/support/FAQ.vue'),
-      //       meta: { title: '常见问题' }
+      //       meta: { title: '常见信息' }
       //     }
       //   ]
-      // }
+      // },
     ]
   }
 ]

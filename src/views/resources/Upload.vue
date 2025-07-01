@@ -212,14 +212,18 @@
   
   <script>
   import { ref, reactive } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { ElMessage } from 'element-plus'
-  import { formatFileSize } from '@/utils'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { formatFileSize } from '@/utils'
+import { resourceApi, resourceUtils } from '@/api/resource'
+import { courseApi } from '@/api/course'
+import { useUserStore } from '@/stores/user'
   
   export default {
     name: 'ResourceUpload',
     setup() {
       const router = useRouter()
+      const userStore = useUserStore()
       const uploadFormRef = ref()
       const uploadRef = ref()
       const uploading = ref(false)
@@ -247,12 +251,7 @@
         ]
       }
   
-      const courseList = ref([
-        { id: 1, name: 'Web前端开发基础' },
-        { id: 2, name: '数据结构与算法' },
-        { id: 3, name: '数据库系统原理' },
-        { id: 4, name: '计算机网络' }
-      ])
+      const courseList = ref([])
   
       const fileList = ref([])
   
@@ -312,10 +311,25 @@
         fileList.value.splice(index, 1)
       }
   
+            // 加载课程列表
+      const loadCourseList = async () => {
+        try {
+          const response = await courseApi.getAllCourses()
+          if (response.code === 0) {
+            courseList.value = response.data.map(course => ({
+              id: course.courseId,
+              name: course.courseName
+            }))
+          }
+        } catch (error) {
+          console.error('加载课程列表失败:', error)
+        }
+      }
+
       // 开始上传
       const handleUpload = async () => {
         if (!uploadFormRef.value) return
-  
+
         try {
           await uploadFormRef.value.validate()
           
@@ -323,57 +337,89 @@
             ElMessage.warning('请选择要上传的文件')
             return
           }
-  
+
           uploading.value = true
-  
-          // 模拟文件上传过程
+
+          // 逐个上传文件
           for (let i = 0; i < fileList.value.length; i++) {
             const file = fileList.value[i]
             file.status = 'uploading'
             file.percentage = 0
-  
-            // 模拟上传进度
-            const uploadProgress = setInterval(() => {
-              if (file.percentage < 100) {
-                file.percentage += Math.random() * 30
-                if (file.percentage > 100) {
-                  file.percentage = 100
-                }
-              } else {
-                clearInterval(uploadProgress)
-                file.status = 'success'
-              }
-            }, 200)
-  
-            // 等待上传完成
-            await new Promise(resolve => {
-              const checkComplete = setInterval(() => {
-                if (file.status === 'success') {
-                  clearInterval(checkComplete)
-                  resolve()
-                }
-              }, 100)
-            })
-          }
-  
-          ElMessage.success('文件上传成功')
-          router.push('/resource/list')
-        } catch (error) {
-          console.error('表单验证失败:', error)
-          fileList.value.forEach(file => {
-            if (file.status === 'uploading') {
+
+            try {
+              // 模拟文件上传到OSS的过程
+              // 在实际项目中，这里应该调用OSS SDK上传文件
+              await new Promise((resolve, reject) => {
+                const progressInterval = setInterval(() => {
+                  if (file.percentage < 90) {
+                    file.percentage += Math.random() * 20
+                  } else {
+                    clearInterval(progressInterval)
+                    // 模拟上传完成，生成OSS URL
+                    const ossUrl = `https://oss.aliyun.com/resource/${Date.now()}_${file.name}`
+                    
+                    // 构建资源数据
+                    const resourceData = {
+                      teacherId: userStore.userInfo?.id || 'T123',
+                      type: uploadForm.type,
+                      name: file.name,
+                      courseId: uploadForm.courseId,
+                      description: uploadForm.description,
+                      permission: uploadForm.permission,
+                      size: file.size,
+                      url: ossUrl,
+                      uploadTime: new Date().toISOString()
+                    }
+
+                    // 转换数据格式并调用API记录资源信息
+                    const backendData = resourceUtils.transformToBackendData(resourceData)
+                    resourceApi.uploadResource(backendData).then(response => {
+                      if (response.code === 0) {
+                        file.percentage = 100
+                        file.status = 'success'
+                        resolve()
+                      } else {
+                        file.status = 'fail'
+                        reject(new Error(response.message || '资源信息保存失败'))
+                      }
+                    }).catch(error => {
+                      file.status = 'fail'
+                      reject(error)
+                    })
+                  }
+                }, 200)
+              })
+
+            } catch (error) {
+              console.error(`文件 ${file.name} 上传失败:`, error)
               file.status = 'fail'
+              ElMessage.error(`文件 ${file.name} 上传失败: ${error.message}`)
             }
-          })
+          }
+
+          // 检查是否所有文件都上传成功
+          const successCount = fileList.value.filter(f => f.status === 'success').length
+          if (successCount === fileList.value.length) {
+            ElMessage.success('所有文件上传成功')
+            router.push('/resource/list')
+          } else {
+            ElMessage.warning(`成功上传 ${successCount} 个文件，${fileList.value.length - successCount} 个失败`)
+          }
+        } catch (error) {
+          console.error('上传过程出错:', error)
+          ElMessage.error('上传失败，请稍后重试')
         } finally {
           uploading.value = false
         }
       }
   
-      const handleCancel = () => {
+            const handleCancel = () => {
         router.back()
       }
-  
+
+      // 组件挂载时加载课程列表
+      loadCourseList()
+
       return {
         uploadFormRef,
         uploadRef,
@@ -390,6 +436,7 @@
         removeFile,
         handleUpload,
         handleCancel,
+        loadCourseList,
         formatFileSize
       }
     }

@@ -222,6 +222,9 @@
                     <el-dropdown-item :command="{action: 'copy', resource}">
                       <el-icon><CopyDocument /></el-icon>复制链接
                     </el-dropdown-item>
+                    <el-dropdown-item :command="{action: 'share', resource}">
+                      <el-icon><Connection /></el-icon>分享给其他教师
+                    </el-dropdown-item>
                     <el-dropdown-item
                       :command="{action: 'delete', resource}"
                       divided
@@ -315,6 +318,9 @@
                       <el-dropdown-item :command="{action: 'copy', resource: row}">
                         <el-icon><CopyDocument /></el-icon>复制链接
                       </el-dropdown-item>
+                      <el-dropdown-item :command="{action: 'share', resource: row}">
+                        <el-icon><Connection /></el-icon>分享给其他教师
+                      </el-dropdown-item>
                       <el-dropdown-item
                         :command="{action: 'delete', resource: row}"
                         divided
@@ -395,21 +401,25 @@
   
   <script>
   import { ref, reactive, onMounted } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
-  import { formatDate, formatFileSize } from '@/utils'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDate, formatFileSize } from '@/utils'
+import { resourceApi, resourceUtils } from '@/api/resource'
+import { courseApi } from '@/api/course'
+import { useUserStore } from '@/stores/user'
   
   export default {
     name: 'ResourceList',
-    setup() {
+        setup() {
       const loading = ref(false)
       const viewMode = ref('grid')
-  
+      const userStore = useUserStore()
+
       // 统计数据
       const stats = reactive({
-        totalFiles: 156,
-        videoCount: 23,
-        imageCount: 45,
-        totalSize: 2147483648 // 2GB
+        totalFiles: 0,
+        videoCount: 0,
+        imageCount: 0,
+        totalSize: 0
       })
   
       // 搜索表单
@@ -427,14 +437,9 @@
         total: 0
       })
   
-      // 课程列表
-      const courseList = ref([
-        { id: 1, name: 'Web前端开发基础' },
-        { id: 2, name: '数据结构与算法' },
-        { id: 3, name: '数据库系统原理' },
-        { id: 4, name: '计算机网络' }
-      ])
-  
+            // 课程列表
+      const courseList = ref([])
+
       // 资源列表
       const resourceList = ref([])
       
@@ -443,81 +448,8 @@
       const selectedResource = ref(null)
       const previewVisible = ref(false)
   
-      // 模拟资源数据
-      const mockResources = [
-        {
-          id: 1,
-          name: 'HTML5基础教程.pdf',
-          type: 'document',
-          size: 5242880, // 5MB
-          url: '/files/html5-tutorial.pdf',
-          courseName: 'Web前端开发基础',
-          courseId: 1,
-          downloads: 156,
-          uploader: '张老师',
-          uploadTime: '2024-06-20 10:30:00'
-        },
-        {
-          id: 2,
-          name: 'CSS3动画演示.mp4',
-          type: 'video',
-          size: 52428800, // 50MB
-          url: '/files/css3-animation.mp4',
-          courseName: 'Web前端开发基础',
-          courseId: 1,
-          downloads: 89,
-          uploader: '张老师',
-          uploadTime: '2024-06-19 14:20:00'
-        },
-        {
-          id: 3,
-          name: '响应式布局示例.jpg',
-          type: 'image',
-          size: 1048576, // 1MB
-          url: '/files/responsive-layout.jpg',
-          courseName: 'Web前端开发基础',
-          courseId: 1,
-          downloads: 234,
-          uploader: '张老师',
-          uploadTime: '2024-06-18 16:45:00'
-        },
-        {
-          id: 4,
-          name: '数据结构课件.pptx',
-          type: 'document',
-          size: 10485760, // 10MB
-          url: '/files/data-structure.pptx',
-          courseName: '数据结构与算法',
-          courseId: 2,
-          downloads: 178,
-          uploader: '李老师',
-          uploadTime: '2024-06-17 09:15:00'
-        },
-        {
-          id: 5,
-          name: '算法讲解音频.mp3',
-          type: 'audio',
-          size: 15728640, // 15MB
-          url: '/files/algorithm-explanation.mp3',
-          courseName: '数据结构与算法',
-          courseId: 2,
-          downloads: 67,
-          uploader: '李老师',
-          uploadTime: '2024-06-16 11:30:00'
-        },
-        {
-          id: 6,
-          name: 'SQL查询示例.sql',
-          type: 'other',
-          size: 2048, // 2KB
-          url: '/files/sql-examples.sql',
-          courseName: '数据库系统原理',
-          courseId: 3,
-          downloads: 145,
-          uploader: '王老师',
-          uploadTime: '2024-06-15 13:20:00'
-        }
-      ]
+      // 所有资源数据（用于搜索和统计）
+      const allResources = ref([])
   
       // 获取文件类型文本
       const getTypeText = (type) => {
@@ -610,12 +542,26 @@
       }
   
       // 下载资源
-      const downloadResource = (resource) => {
-        // 模拟下载
-        ElMessage.success(`开始下载: ${resource.name}`)
-        
-        // 增加下载次数
-        resource.downloads++
+      const downloadResource = async (resource) => {
+        try {
+          const response = await resourceApi.downloadResource(resource.id)
+          if (response.code === 0) {
+            // 创建下载链接
+            const link = document.createElement('a')
+            link.href = response.data
+            link.download = resource.name
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            
+            ElMessage.success(`开始下载: ${resource.name}`)
+          } else {
+            ElMessage.error(response.message || '下载失败')
+          }
+        } catch (error) {
+          console.error('下载失败:', error)
+          ElMessage.error('下载失败，请稍后重试')
+        }
       }
   
       // 编辑资源
@@ -638,6 +584,9 @@
               ElMessage.success('链接已复制到剪贴板')
             })
             break
+          case 'share':
+            handleShareResource(resource)
+            break
           case 'delete':
             handleDeleteResource(resource)
             break
@@ -654,13 +603,31 @@
             cancelButtonText: '取消',
             type: 'warning'
           }
-        ).then(() => {
-          const index = resourceList.value.findIndex(r => r.id === resource.id)
-          if (index > -1) {
-            resourceList.value.splice(index, 1)
-            pagination.total--
+        ).then(async () => {
+          try {
+            const response = await resourceApi.deleteResource(resource.id)
+            if (response.code === 0) {
+              // 从列表中移除
+              const index = resourceList.value.findIndex(r => r.id === resource.id)
+              if (index > -1) {
+                resourceList.value.splice(index, 1)
+                pagination.total--
+              }
+              // 从所有资源中移除
+              const allIndex = allResources.value.findIndex(r => r.id === resource.id)
+              if (allIndex > -1) {
+                allResources.value.splice(allIndex, 1)
+              }
+              // 更新统计数据
+              updateStats()
+              ElMessage.success('删除成功')
+            } else {
+              ElMessage.error(response.message || '删除失败')
+            }
+          } catch (error) {
+            console.error('删除失败:', error)
+            ElMessage.error('删除失败，请稍后重试')
           }
-          ElMessage.success('删除成功')
         }).catch(() => {
           ElMessage.info('已取消删除')
         })
@@ -671,6 +638,25 @@
         ElMessage.success(`开始批量下载 ${selectedResources.value.length} 个文件`)
       }
   
+      // 分享资源
+      const handleShareResource = async (resource) => {
+        try {
+          // 这里可以弹出一个对话框让用户选择要分享给哪个教师
+          const targetTeacherId = prompt('请输入目标教师ID:')
+          if (!targetTeacherId) return
+
+          const response = await resourceApi.shareResource(resource.id, targetTeacherId)
+          if (response.code === 0) {
+            ElMessage.success('资源分享成功')
+          } else {
+            ElMessage.error(response.message || '分享失败')
+          }
+        } catch (error) {
+          console.error('分享失败:', error)
+          ElMessage.error('分享失败，请稍后重试')
+        }
+      }
+
       // 批量删除
       const batchDelete = () => {
         ElMessageBox.confirm(
@@ -681,13 +667,38 @@
             cancelButtonText: '取消',
             type: 'warning'
           }
-        ).then(() => {
-          resourceList.value = resourceList.value.filter(r => 
-            !selectedResources.value.includes(r.id)
-          )
-          pagination.total -= selectedResources.value.length
-          selectedResources.value = []
-          ElMessage.success('批量删除成功')
+        ).then(async () => {
+          try {
+            // 逐个删除选中的资源
+            const deletePromises = selectedResources.value.map(resourceId => 
+              resourceApi.deleteResource(resourceId)
+            )
+            
+            const results = await Promise.allSettled(deletePromises)
+            const successCount = results.filter(result => 
+              result.status === 'fulfilled' && result.value.code === 0
+            ).length
+            
+            if (successCount === selectedResources.value.length) {
+              // 从列表中移除
+              resourceList.value = resourceList.value.filter(r => 
+                !selectedResources.value.includes(r.id)
+              )
+              // 从所有资源中移除
+              allResources.value = allResources.value.filter(r => 
+                !selectedResources.value.includes(r.id)
+              )
+              pagination.total -= selectedResources.value.length
+              selectedResources.value = []
+              updateStats()
+              ElMessage.success('批量删除成功')
+            } else {
+              ElMessage.warning(`成功删除 ${successCount} 个文件，${selectedResources.value.length - successCount} 个删除失败`)
+            }
+          } catch (error) {
+            console.error('批量删除失败:', error)
+            ElMessage.error('批量删除失败，请稍后重试')
+          }
         }).catch(() => {
           ElMessage.info('已取消删除')
         })
@@ -705,42 +716,91 @@
         loadResourceList()
       }
   
+            // 更新统计数据
+      const updateStats = () => {
+        const resources = allResources.value
+        stats.totalFiles = resources.length
+        stats.videoCount = resources.filter(r => r.type === 'video').length
+        stats.imageCount = resources.filter(r => r.type === 'image').length
+        stats.totalSize = resources.reduce((total, r) => total + (r.size || 0), 0)
+      }
+
+      // 加载课程列表
+      const loadCourseList = async () => {
+        try {
+          const response = await courseApi.getAllCourses()
+          if (response.code === 0) {
+            courseList.value = response.data.map(course => ({
+              id: course.courseId,
+              name: course.courseName
+            }))
+          }
+        } catch (error) {
+          console.error('加载课程列表失败:', error)
+        }
+      }
+
       // 加载资源列表
-      const loadResourceList = () => {
+      const loadResourceList = async () => {
         loading.value = true
         
-        setTimeout(() => {
-          let filteredResources = [...mockResources]
-  
-          // 应用搜索过滤
-          if (searchForm.name) {
-            filteredResources = filteredResources.filter(resource =>
-              resource.name.toLowerCase().includes(searchForm.name.toLowerCase())
-            )
+        try {
+          const teacherId = userStore.userInfo?.id || 'T123' // 从用户store获取教师ID
+          let response
+
+          // 如果有搜索条件，使用搜索接口
+          if (searchForm.name || searchForm.type || searchForm.courseId) {
+            const keyword = searchForm.name || ''
+            response = await resourceApi.searchResources(keyword, teacherId)
+          } else {
+            // 否则获取所有资源
+            response = await resourceApi.getResourcesByTeacher(teacherId)
           }
-          if (searchForm.type) {
-            filteredResources = filteredResources.filter(resource =>
-              resource.type === searchForm.type
-            )
+
+          if (response.code === 0) {
+            // 转换后端数据为前端格式
+            const transformedResources = response.data.map(resourceUtils.transformResourceData)
+            
+            // 应用前端过滤
+            let filteredResources = transformedResources
+            
+            if (searchForm.type) {
+              filteredResources = filteredResources.filter(resource =>
+                resource.type === searchForm.type
+              )
+            }
+            if (searchForm.courseId) {
+              filteredResources = filteredResources.filter(resource =>
+                resource.courseId === searchForm.courseId
+              )
+            }
+
+            // 更新所有资源数据
+            allResources.value = filteredResources
+            
+            // 分页处理
+            const start = (pagination.currentPage - 1) * pagination.pageSize
+            const end = start + pagination.pageSize
+            
+            resourceList.value = filteredResources.slice(start, end)
+            pagination.total = filteredResources.length
+            
+            // 更新统计数据
+            updateStats()
+          } else {
+            ElMessage.error(response.message || '加载资源列表失败')
           }
-          if (searchForm.courseId) {
-            filteredResources = filteredResources.filter(resource =>
-              resource.courseId === searchForm.courseId
-            )
-          }
-  
-          // 分页处理
-          const start = (pagination.currentPage - 1) * pagination.pageSize
-          const end = start + pagination.pageSize
-          
-          resourceList.value = filteredResources.slice(start, end)
-          pagination.total = filteredResources.length
+        } catch (error) {
+          console.error('加载资源列表失败:', error)
+          ElMessage.error('加载资源列表失败，请稍后重试')
+        } finally {
           loading.value = false
-        }, 500)
+        }
       }
   
-      onMounted(() => {
-        loadResourceList()
+      onMounted(async () => {
+        await loadCourseList()
+        await loadResourceList()
       })
   
       return {
@@ -767,10 +827,13 @@
         downloadResource,
         editResource,
         handleResourceAction,
+        handleShareResource,
         batchDownload,
         batchDelete,
         handleSizeChange,
         handleCurrentChange,
+        loadCourseList,
+        updateStats,
         formatDate,
         formatFileSize
       }

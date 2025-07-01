@@ -59,13 +59,9 @@ export const courseUtils = {
   transformCourseData(backendData) {
     return {
       id: backendData.courseId,
-      name: backendData.subjectId, // 假设subjectId对应课程名称
+      name: backendData.courseName, // 修改为courseName
       code: backendData.courseId,
-      description: backendData.evaluation || '暂无描述',
-      status: this.getStatusFromEvaluation(backendData.evaluation),
-      semester: this.getSemesterFromTime(backendData.time),
-      credits: 3, // 默认值，后端可能需要添加
-      duration: 48, // 默认值，后端可能需要添加
+      evaluation: backendData.evaluation || '暂无评价', // 添加evaluation字段
       studentCount: 0, // 默认值，后端可能需要添加
       progress: 0, // 默认值，后端可能需要添加
       createTime: new Date().toISOString().split('T')[0],
@@ -82,27 +78,11 @@ export const courseUtils = {
   transformToBackendData(frontendData) {
     return {
       courseId: frontendData.code || frontendData.id,
+      courseName: frontendData.name, // 修改为courseName
       teacherId: frontendData.teacherId || 'T123', // 从用户store获取
-      subjectId: frontendData.name,
       time: frontendData.time || '周一第1-2节',
       evaluation: frontendData.description || '良好',
       classroom: frontendData.classroom || '教室A101'
     }
-  },
-
-  // 根据评价获取状态
-  getStatusFromEvaluation(evaluation) {
-    if (!evaluation) return 'pending'
-    if (evaluation.includes('优秀')) return 'active'
-    if (evaluation.includes('良好')) return 'active'
-    if (evaluation.includes('一般')) return 'finished'
-    return 'pending'
-  },
-
-  // 根据时间获取学期
-  getSemesterFromTime(time) {
-    if (!time) return '2024春季'
-    // 这里可以根据实际的时间格式进行解析
-    return '2024春季'
   }
 } 

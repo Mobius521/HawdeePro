@@ -1,109 +1,349 @@
-智能化在线教学平台
+# API 使用说明
 
-一. 项目概述
+本文档介绍了智能化在线教学平台的前端API使用方法。
 
-智能化在线教学平台是一个为教育机构和教师设计的综合性教学管理系统，支持教师端、助教端和系统管理员端三种角色，提供完整的在线教学解决方案。平台涵盖课程管理、资源管理、作业管理、学情分析等核心功能，帮助教师高效开展教学活动，提升教学质量。
+## 目录结构
 
-二.功能特点
+```
+src/api/
+├── index.js          # 统一导出文件
+├── course.js         # 课程管理API
+├── resource.js       # 课程资源管理API
+├── log.js           # 操作日志管理API
+├── assignment.js    # 作业管理API
+├── student.js       # 学生学情分析API
+├── auth.js          # 认证API
+└── README.md        # 本文档
+```
 
-· 核心功能模块:
+## 快速开始
 
-用户认证：支持教师、助教和系统管理员的登录与注册
+### 1. 导入API
 
-网站门户：登录前的公共门户，展示平台信息和登录入口
+```javascript
+// 方式1：导入特定模块
+import { courseApi, courseUtils } from '@/api/course'
+import { resourceApi, resourceUtils } from '@/api/resource'
 
-课程管理：创建、编辑、删除课程，查看课表
+// 方式2：统一导入
+import { courseApi, resourceApi, logApi, assignmentApi, studentApi } from '@/api'
+```
 
-日志管理：查看和统计系统操作日志
+### 2. 基本使用
 
-资源管理：上传、下载、管理教学资源，支持资源分类、检索、分享和协作编辑
+```javascript
+// 获取课程列表
+const loadCourses = async () => {
+  try {
+    const response = await courseApi.getAllCourses()
+    if (response.code === 0) {
+      const courses = response.data.map(courseUtils.transformCourseData)
+      return courses
+    } else {
+      throw new Error(response.message)
+    }
+  } catch (error) {
+    console.error('加载课程失败:', error)
+    throw error
+  }
+}
+```
 
-学情分析：分析学生学习记录、作业情况和成绩，自动生成个性化建议
+## API 模块详解
 
-作业管理：发布作业、批改作业、限时测试、自动评分
+### 课程管理 (course.js)
 
-· 角色权限划分
+#### API 方法
+- `addCourse(courseData)` - 添加课程
+- `updateCourse(courseData)` - 修改课程
+- `deleteCourse(courseId)` - 删除课程
+- `getCourseById(courseId)` - 根据ID获取课程
+- `getAllCourses()` - 获取所有课程
+- `getCoursesByTeacher(teacherId)` - 根据教师获取课程
 
-教师端
-完整的课程管理功能
-资源上传、分享与协作编辑
-作业发布与批改
-学情分析与个性化建议生成
-直播课管理
+#### 工具方法
+- `transformCourseData(backendData)` - 后端数据转前端格式
+- `transformToBackendData(frontendData)` - 前端数据转后端格式
+- `validateCourseData(data)` - 验证课程数据
+- `generateCourseId()` - 生成课程ID
 
-助教端
-课程辅助管理
-作业批改协助
-直播课互动管理
-有限的成绩管理权限
-学情跟进
+#### 使用示例
 
-系统管理员端
-网站门户管理
-用户账号管理
-课程与资源监管
-系统运维与日志管理
-全局数据统计与分析
+```javascript
+// 创建课程
+const createCourse = async (courseForm) => {
+  const backendData = courseUtils.transformToBackendData(courseForm)
+  const validation = courseUtils.validateCourseData(backendData)
+  
+  if (!validation.isValid) {
+    throw new Error(validation.errors.join(', '))
+  }
+  
+  const response = await courseApi.addCourse(backendData)
+  return response
+}
 
-三. 技术栈
-·前端技术:
-Vue.js 3：前端框架
-Vue Router：路由管理
-Element Plus：UI 组件库
-Pinia：状态管理
-Axios：HTTP 客户端
-ECharts：数据可视化
+// 获取教师课程
+const loadTeacherCourses = async (teacherId) => {
+  const response = await courseApi.getCoursesByTeacher(teacherId)
+  if (response.code === 0) {
+    return response.data.map(courseUtils.transformCourseData)
+  }
+  throw new Error(response.message)
+}
+```
 
-·开发工具:
-Node.js：运行环境
-npm/yarn：包管理工具
-Webpack：模块打包工具
-VS Code：开发编辑器
+### 课程资源管理 (resource.js)
 
-四. 目录结构
-education-project/
-├── public/                      # 静态资源
-├── src/
-│   ├── api/                     # API接口
-│   ├── components/              # 组件
-│   ├── router/                  # 路由配置
-│   ├── stores/                  # 状态管理
-│   ├── utils/                   # 插件配置
-│   ├── views/                   # 页面视图
-│   │   ├── login/               # 登录相关页面
-│   │   ├── portal/              # 网站门户
-│   │   ├── course/              # 课程管理
-│   │   ├── log/                 # 日志管理
-│   │   ├── resources/           # 资源管理
-│   │   ├── student/             # 学情分析
-│   │   └── homework/            # 作业管理
-│   ├── App.vue                  # 应用入口组件
-│   └── main.js                  # 应用入口文件
-├── .gitignore                   # Git忽略文件
-├── index.html                   # 首页HTML
-├── package.json                 # 项目配置
-└── README.md                    # 项目说明
+#### API 方法
+- `getResourcesByTeacher(teacherId)` - 获取教师资源
+- `searchResources(keyword, teacherId)` - 搜索资源
+- `uploadResource(resourceData)` - 上传资源
+- `downloadResource(resourceId)` - 下载资源
+- `deleteResource(resourceId)` - 删除资源
+- `shareResource(resourceId, targetTeacherId)` - 分享资源
 
-五. 角色权限说明
+#### 工具方法
+- `transformResourceData(backendData)` - 数据转换
+- `extractFileName(url)` - 提取文件名
+- `getFileExtension(url)` - 获取文件扩展名
+- `getFileTypeIcon(extension)` - 获取文件类型图标
+- `isSupportedFileType(fileName)` - 检查文件类型支持
 
-·系统管理员
-完全控制网站门户的展示内容和布局
-管理教师和助教账号
-审核课程创建和删除
-监控系统资源和性能
-查看全量操作日志
+#### 使用示例
 
-·教师
-管理自己创建的课程
-上传和管理教学资源
-发布作业和测评
-批改作业和录入成绩
-分析学生学情并生成个性化建议
-管理直播课程
+```javascript
+// 上传资源
+const uploadResource = async (file, teacherId) => {
+  // 先上传文件到OSS（这里需要实现文件上传逻辑）
+  const fileUrl = await uploadToOSS(file)
+  
+  const resourceData = {
+    teacherId,
+    resourceType: resourceUtils.getFileExtension(file.name),
+    resourceUrl: fileUrl,
+    uploadTime: new Date().toISOString()
+  }
+  
+  const response = await resourceApi.uploadResource(resourceData)
+  return response
+}
 
-·助教
-协助教师进行课程管理
-参与直播课互动管理
-协助批改作业
-录入部分成绩
-跟进学生学情
+// 搜索资源
+const searchResources = async (keyword, teacherId) => {
+  const response = await resourceApi.searchResources(keyword, teacherId)
+  if (response.code === 0) {
+    return response.data.map(resourceUtils.transformResourceData)
+  }
+  throw new Error(response.message)
+}
+```
+
+### 操作日志管理 (log.js)
+
+#### API 方法
+- `getAllLogs()` - 获取所有日志
+- `getLogCount()` - 获取日志总数
+- `addLog(logData)` - 添加日志
+
+#### 工具方法
+- `transformLogData(backendData)` - 数据转换
+- `formatDateTime(dateTimeString)` - 格式化日期时间
+- `getOperationType(content)` - 获取操作类型
+- `analyzeLogs(logs)` - 分析日志数据
+- `filterLogs(logs, filters)` - 过滤日志
+
+#### 使用示例
+
+```javascript
+// 添加操作日志
+const addOperationLog = async (staffId, content) => {
+  const logData = {
+    staffId,
+    operationContent: content
+  }
+  
+  const response = await logApi.addLog(logData)
+  return response
+}
+
+// 获取日志统计
+const getLogStatistics = async () => {
+  const [logsResponse, countResponse] = await Promise.all([
+    logApi.getAllLogs(),
+    logApi.getLogCount()
+  ])
+  
+  if (logsResponse.code === 0 && countResponse.code === 0) {
+    const logs = logsResponse.data.map(logUtils.transformLogData)
+    const analysis = logUtils.analyzeLogs(logs)
+    return {
+      logs,
+      total: countResponse.data,
+      analysis
+    }
+  }
+  throw new Error('获取日志统计失败')
+}
+```
+
+### 作业管理 (assignment.js)
+
+#### API 方法
+- `getAssignments(params)` - 获取作业列表
+- `getAssignmentById(assignmentId)` - 获取作业详情
+- `createAssignment(assignmentData)` - 创建作业
+- `updateAssignment(assignmentData)` - 更新作业
+- `deleteAssignment(assignmentId)` - 删除作业
+- `publishAssignment(assignmentId)` - 发布作业
+- `getAssignmentStatistics(assignmentId)` - 获取作业统计
+- `gradeAssignment(assignmentId, gradeData)` - 批改作业
+- `getStudentSubmissions(assignmentId)` - 获取学生提交
+- `autoGrade(assignmentId)` - 自动评分
+
+#### 工具方法
+- `transformAssignmentData(backendData)` - 数据转换
+- `getAssignmentTypeText(type)` - 获取作业类型文本
+- `getAssignmentStatusText(status)` - 获取状态文本
+- `validateAssignmentData(data)` - 验证数据
+- `calculateCompletionRate(submissionCount, totalStudents)` - 计算完成率
+- `isAssignmentExpired(dueDate)` - 检查是否过期
+
+#### 使用示例
+
+```javascript
+// 创建作业
+const createAssignment = async (assignmentForm) => {
+  const backendData = assignmentUtils.transformToBackendData(assignmentForm)
+  const validation = assignmentUtils.validateAssignmentData(backendData)
+  
+  if (!validation.isValid) {
+    throw new Error(validation.errors.join(', '))
+  }
+  
+  const response = await assignmentApi.createAssignment(backendData)
+  return response
+}
+
+// 批改作业
+const gradeAssignment = async (assignmentId, studentId, score, feedback) => {
+  const gradeData = {
+    studentId,
+    score,
+    feedback,
+    gradeTime: new Date().toISOString()
+  }
+  
+  const response = await assignmentApi.gradeAssignment(assignmentId, gradeData)
+  return response
+}
+```
+
+### 学生学情分析 (student.js)
+
+#### API 方法
+- `getStudentRecords(studentId, params)` - 获取学习记录
+- `getStudentAssignments(studentId, params)` - 获取作业情况
+- `getStudentGrades(studentId, params)` - 获取成绩
+- `getStudentCourses(studentId)` - 获取课程学习情况
+- `getStudentStatistics(studentId)` - 获取学习统计
+- `generatePersonalizedSuggestions(studentId)` - 生成个性化建议
+- `updateSuggestions(studentId, suggestions)` - 更新建议
+
+#### 工具方法
+- `transformStudentData(backendData)` - 学生数据转换
+- `transformLearningRecord(backendData)` - 学习记录转换
+- `transformAssignmentRecord(backendData)` - 作业记录转换
+- `transformGradeRecord(backendData)` - 成绩记录转换
+- `calculateGPA(grades)` - 计算GPA
+- `analyzeLearningTrend(records)` - 分析学习趋势
+- `generateSuggestions(analysis)` - 生成学习建议
+
+#### 使用示例
+
+```javascript
+// 获取学生学情分析
+const getStudentAnalysis = async (studentId) => {
+  const [recordsResponse, assignmentsResponse, gradesResponse] = await Promise.all([
+    studentApi.getStudentRecords(studentId),
+    studentApi.getStudentAssignments(studentId),
+    studentApi.getStudentGrades(studentId)
+  ])
+  
+  if (recordsResponse.code === 0 && assignmentsResponse.code === 0 && gradesResponse.code === 0) {
+    const records = recordsResponse.data.map(studentUtils.transformLearningRecord)
+    const assignments = assignmentsResponse.data.map(studentUtils.transformAssignmentRecord)
+    const grades = gradesResponse.data.map(studentUtils.transformGradeRecord)
+    
+    const trend = studentUtils.analyzeLearningTrend(records)
+    const suggestions = studentUtils.generateSuggestions(trend)
+    const gpa = studentUtils.calculateGPA(grades)
+    
+    return {
+      records,
+      assignments,
+      grades,
+      trend,
+      suggestions,
+      gpa
+    }
+  }
+  throw new Error('获取学生学情分析失败')
+}
+```
+
+## 错误处理
+
+所有API都遵循统一的错误处理模式：
+
+```javascript
+try {
+  const response = await someApi.someMethod(params)
+  if (response.code === 0) {
+    // 成功处理
+    return response.data
+  } else {
+    // 业务错误
+    throw new Error(response.message)
+  }
+} catch (error) {
+  // 网络错误或其他错误
+  console.error('API调用失败:', error)
+  throw error
+}
+```
+
+## 数据转换
+
+所有API都提供了数据转换工具，用于在前端和后端数据格式之间转换：
+
+```javascript
+// 后端数据转前端格式
+const frontendData = someUtils.transformData(backendData)
+
+// 前端数据转后端格式
+const backendData = someUtils.transformToBackendData(frontendData)
+```
+
+## 数据验证
+
+所有API都提供了数据验证工具：
+
+```javascript
+const validation = someUtils.validateData(data)
+if (!validation.isValid) {
+  throw new Error(validation.errors.join(', '))
+}
+```
+
+## 注意事项
+
+1. 所有API调用都应该包含适当的错误处理
+2. 使用数据转换工具确保数据格式的一致性
+3. 在提交数据前进行验证
+4. 注意API的权限控制，不同角色有不同的访问权限
+5. 对于文件上传，需要先上传到OSS，然后记录元数据到后端
+
+## 更新日志
+
+- v1.0.0 - 初始版本，包含课程、资源、日志、作业、学生分析等模块 

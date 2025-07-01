@@ -769,7 +769,7 @@ const createPaper = () => {
 
 const uploadPaper = () => {
   ElMessage.info('跳转到试卷上传页面')
-  router.push("/exam/upload")
+  router.push("/dashboard/exam/upload")
   // 这里可以路由跳转到上传页面
 
 }

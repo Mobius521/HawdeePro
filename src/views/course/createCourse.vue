@@ -32,10 +32,10 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="课程代码" prop="code">
+                <el-form-item label="上课时间" prop="time">
                   <el-input
-                    v-model="courseForm.code"
-                    placeholder="请输入课程代码"
+                    v-model="courseForm.time"
+                    placeholder="如：周一第1-2节"
                     clearable
                   />
                 </el-form-item>
@@ -43,39 +43,13 @@
             </el-row>
   
             <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="学分" prop="credits">
-                  <el-input-number
-                    v-model="courseForm.credits"
-                    :min="1"
-                    :max="10"
-                    placeholder="学分"
-                    style="width: 100%"
+              <el-col :span="12">
+                <el-form-item label="教室" prop="classroom">
+                  <el-input
+                    v-model="courseForm.classroom"
+                    placeholder="如：教室A101"
+                    clearable
                   />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="学时" prop="duration">
-                  <el-input-number
-                    v-model="courseForm.duration"
-                    :min="1"
-                    :max="200"
-                    placeholder="学时"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="学期" prop="semester">
-                  <el-select
-                    v-model="courseForm.semester"
-                    placeholder="请选择学期"
-                    style="width: 100%"
-                  >
-                    <el-option label="2024春季" value="2024-spring" />
-                    <el-option label="2024秋季" value="2024-autumn" />
-                    <el-option label="2025春季" value="2025-spring" />
-                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -85,156 +59,9 @@
                 v-model="courseForm.description"
                 type="textarea"
                 :rows="4"
-                placeholder="请输入课程描述，包括课程目标、主要内容等"
+                placeholder="请输入课程描述"
               />
             </el-form-item>
-          </div>
-  
-          <!-- 课程设置 -->
-          <div class="form-section">
-            <h3 class="section-title">课程设置</h3>
-            
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="课程类型" prop="type">
-                  <el-select
-                    v-model="courseForm.type"
-                    placeholder="请选择课程类型"
-                    style="width: 100%"
-                  >
-                    <el-option label="必修课" value="required" />
-                    <el-option label="选修课" value="elective" />
-                    <el-option label="实践课" value="practice" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="课程难度" prop="difficulty">
-                  <el-select
-                    v-model="courseForm.difficulty"
-                    placeholder="请选择课程难度"
-                    style="width: 100%"
-                  >
-                    <el-option label="初级" value="beginner" />
-                    <el-option label="中级" value="intermediate" />
-                    <el-option label="高级" value="advanced" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-  
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="开课时间" prop="startDate">
-                  <el-date-picker
-                    v-model="courseForm.startDate"
-                    type="date"
-                    placeholder="选择开课时间"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="结课时间" prop="endDate">
-                  <el-date-picker
-                    v-model="courseForm.endDate"
-                    type="date"
-                    placeholder="选择结课时间"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-  
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="最大学生数" prop="maxStudents">
-                  <el-input-number
-                    v-model="courseForm.maxStudents"
-                    :min="1"
-                    :max="500"
-                    placeholder="最大学生数"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="课程状态" prop="status">
-                  <el-radio-group v-model="courseForm.status">
-                    <el-radio label="draft">草稿</el-radio>
-                    <el-radio label="published">发布</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-  
-          <!-- 课程封面 -->
-          <div class="form-section">
-            <h3 class="section-title">课程封面</h3>
-            
-            <el-form-item label="封面图片">
-              <el-upload
-                class="cover-uploader"
-                action="#"
-                :show-file-list="false"
-                :before-upload="beforeCoverUpload"
-                :on-success="handleCoverSuccess"
-              >
-                <img v-if="courseForm.cover" :src="courseForm.cover" class="cover-image" />
-                <div v-else class="cover-placeholder">
-                  <el-icon class="cover-icon"><Plus /></el-icon>
-                  <div class="cover-text">点击上传封面</div>
-                </div>
-              </el-upload>
-              <div class="upload-tip">
-                建议尺寸：800x450像素，支持 JPG、PNG 格式，文件大小不超过 2MB
-              </div>
-            </el-form-item>
-          </div>
-  
-          <!-- 课程大纲 -->
-          <div class="form-section">
-            <h3 class="section-title">课程大纲</h3>
-            
-            <div class="chapter-list">
-              <div
-                v-for="(chapter, index) in courseForm.chapters"
-                :key="index"
-                class="chapter-item"
-              >
-                <div class="chapter-header">
-                  <el-input
-                    v-model="chapter.title"
-                    placeholder="请输入章节标题"
-                    class="chapter-title-input"
-                  />
-                  <el-button
-                    type="danger"
-                    size="small"
-                    :icon="Delete"
-                    circle
-                    @click="removeChapter(index)"
-                  />
-                </div>
-                <el-input
-                  v-model="chapter.description"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="请输入章节描述"
-                  class="chapter-description"
-                />
-              </div>
-            </div>
-            
-            <el-button
-              type="dashed"
-              class="add-chapter-btn"
-              @click="addChapter"
-            >
-              <el-icon><Plus /></el-icon>
-              添加章节
-            </el-button>
           </div>
   
           <!-- 表单操作 -->
@@ -258,18 +85,14 @@
   
   <script>
   import { ref, reactive, onMounted } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Delete, Plus } from '@element-plus/icons-vue'
-  import { courseApi, courseUtils } from '@/api/course'
-  import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { courseApi, courseUtils } from '@/api/course'
+import { useUserStore } from '@/stores/user'
+import { courseLogHelper } from '@/utils/logHelper'
   
   export default {
     name: 'CourseCreate',
-    components: {
-      Delete,
-      Plus
-    },
     setup() {
       const router = useRouter()
       const userStore = useUserStore()
@@ -280,21 +103,9 @@
       // 课程表单数据
       const courseForm = reactive({
         name: '',
-        code: '',
-        credits: 3,
-        duration: 48,
-        semester: '',
-        description: '',
-        type: 'required',
-        difficulty: 'intermediate',
-        startDate: '',
-        endDate: '',
-        maxStudents: 50,
-        status: 'draft',
-        cover: '',
-        chapters: [
-          { title: '', description: '' }
-        ]
+        time: '',
+        classroom: '',
+        description: ''
       })
   
       // 表单验证规则
@@ -303,81 +114,16 @@
           { required: true, message: '请输入课程名称', trigger: 'blur' },
           { min: 2, max: 50, message: '课程名称长度在 2 到 50 个字符', trigger: 'blur' }
         ],
-        code: [
-          { required: true, message: '请输入课程代码', trigger: 'blur' },
-          { pattern: /^[A-Z]{2,3}\d{3,4}$/, message: '课程代码格式不正确（如：CS101）', trigger: 'blur' }
+        time: [
+          { required: true, message: '请输入上课时间', trigger: 'blur' }
         ],
-        credits: [
-          { required: true, message: '请输入学分', trigger: 'blur' }
-        ],
-        duration: [
-          { required: true, message: '请输入学时', trigger: 'blur' }
-        ],
-        semester: [
-          { required: true, message: '请选择学期', trigger: 'change' }
+        classroom: [
+          { required: true, message: '请输入教室', trigger: 'blur' }
         ],
         description: [
           { required: true, message: '请输入课程描述', trigger: 'blur' },
-          { min: 10, max: 500, message: '课程描述长度在 10 到 500 个字符', trigger: 'blur' }
-        ],
-        type: [
-          { required: true, message: '请选择课程类型', trigger: 'change' }
-        ],
-        difficulty: [
-          { required: true, message: '请选择课程难度', trigger: 'change' }
-        ],
-        startDate: [
-          { required: true, message: '请选择开课时间', trigger: 'change' }
-        ],
-        endDate: [
-          { required: true, message: '请选择结课时间', trigger: 'change' }
-        ],
-        maxStudents: [
-          { required: true, message: '请输入最大学生数', trigger: 'blur' }
+          { min: 5, max: 200, message: '课程描述长度在 5 到 200 个字符', trigger: 'blur' }
         ]
-      }
-  
-      // 添加章节
-      const addChapter = () => {
-        courseForm.chapters.push({ title: '', description: '' })
-      }
-  
-      // 删除章节
-      const removeChapter = (index) => {
-        if (courseForm.chapters.length > 1) {
-          courseForm.chapters.splice(index, 1)
-        } else {
-          ElMessage.warning('至少保留一个章节')
-        }
-      }
-  
-      // 封面上传前验证
-      const beforeCoverUpload = (file) => {
-        const isJPGOrPNG = file.type === 'image/jpeg' || file.type === 'image/png'
-        const isLt2M = file.size / 1024 / 1024 < 2
-  
-        if (!isJPGOrPNG) {
-          ElMessage.error('封面图片只能是 JPG 或 PNG 格式!')
-          return false
-        }
-        if (!isLt2M) {
-          ElMessage.error('封面图片大小不能超过 2MB!')
-          return false
-        }
-  
-        // 模拟上传
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          courseForm.cover = e.target.result
-        }
-        reader.readAsDataURL(file)
-        
-        return false // 阻止自动上传
-      }
-  
-      // 封面上传成功
-      const handleCoverSuccess = (response) => {
-        courseForm.cover = response.url
       }
   
       // 提交表单
@@ -386,40 +132,24 @@
   
         try {
           await courseFormRef.value.validate()
-          
-          // 验证章节信息
-          const validChapters = courseForm.chapters.filter(chapter => 
-            chapter.title.trim() !== ''
-          )
-          
-          if (validChapters.length === 0) {
-            ElMessage.error('请至少添加一个有效章节')
-            return
-          }
-  
-          // 验证日期
-          if (new Date(courseForm.endDate) <= new Date(courseForm.startDate)) {
-            ElMessage.error('结课时间必须晚于开课时间')
-            return
-          }
-  
           submitting.value = true
   
-          // 准备提交数据
+          // 准备提交数据 - 严格按照后端接口文档格式
           const submitData = {
-            ...courseForm,
+            courseName: courseForm.name,
             teacherId: userStore.userInfo.id || 'T123',
-            time: `${courseForm.startDate} - ${courseForm.endDate}`,
-            classroom: '教室A101' // 默认值，后续可以添加教室选择
+            time: courseForm.time,
+            evaluation: courseForm.description,
+            classroom: courseForm.classroom
           }
   
-          // 转换为后端格式
-          const backendData = courseUtils.transformToBackendData(submitData)
-  
           // 调用API
-          const response = await courseApi.addCourse(backendData)
+          const response = await courseApi.addCourse(submitData)
   
           if (response.code === 0) {
+            // 记录创建课程的日志
+            await courseLogHelper.createCourse(courseForm.name)
+            
             ElMessage.success('课程创建成功')
             router.push('/dashboard/course/list')
           } else {
@@ -460,10 +190,6 @@
         courseForm,
         courseRules,
         submitting,
-        addChapter,
-        removeChapter,
-        beforeCoverUpload,
-        handleCoverSuccess,
         handleSubmit,
         handleCancel
       }

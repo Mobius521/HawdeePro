@@ -11,48 +11,19 @@
             <el-icon><Plus /></el-icon>
             创建课程
           </el-button>
-          <el-button @click="testApiConnection" style="margin-left: 10px;">
-            <el-icon><Connection /></el-icon>
-            测试API
-          </el-button>
         </div>
       </div>
   
       <!-- 搜索和筛选 -->
       <div class="search-section card">
         <el-form :model="searchForm" inline>
-          <el-form-item label="课程名称">
+          <el-form-item label="课程名称/教师">
             <el-input
               v-model="searchForm.name"
-              placeholder="请输入课程名称"
+              placeholder="请输入课程名称或教师姓名"
               clearable
               style="width: 200px"
             />
-          </el-form-item>
-          <el-form-item label="课程状态">
-            <el-select
-              v-model="searchForm.status"
-              placeholder="请选择状态"
-              clearable
-              style="width: 150px"
-            >
-              <el-option label="全部" value="" />
-              <el-option label="进行中" value="active" />
-              <el-option label="已结束" value="finished" />
-              <el-option label="未开始" value="pending" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="学期">
-            <el-select
-              v-model="searchForm.semester"
-              placeholder="请选择学期"
-              clearable
-              style="width: 150px"
-            >
-              <el-option label="2024春季" value="2024-spring" />
-              <el-option label="2024秋季" value="2024-autumn" />
-              <el-option label="2023春季" value="2023-spring" />
-            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -93,27 +64,21 @@
           >
             <div class="course-cover">
               <img :src="course.cover || '/default-course.jpg'" :alt="course.name" />
-              <div class="course-status" :class="course.status">
-                {{ getStatusText(course.status) }}
-              </div>
             </div>
             
             <div class="course-content">
               <h3 class="course-title">{{ course.name }}</h3>
-              <p class="course-description">{{ course.description }}</p>
               
               <div class="course-meta">
                 <div class="meta-item">
                   <el-icon><User /></el-icon>
-                  <span>{{ course.studentCount }} 学生</span>
+                  <span>{{ getTeacherNameSync(course.teacherId) }}</span>
                 </div>
-                <div class="meta-item">
-                  <el-icon><Clock /></el-icon>
-                  <span>{{ course.duration }} 学时</span>
+                <div class="meta-item" v-if="course.time">
+                  <span>时间: {{ course.time }}</span>
                 </div>
-                <div class="meta-item">
-                  <el-icon><Calendar /></el-icon>
-                  <span>{{ course.semester }}</span>
+                <div class="meta-item" v-if="course.classroom">
+                  <span>教室: {{ course.classroom }}</span>
                 </div>
               </div>
               
@@ -142,32 +107,11 @@
               <el-button
                 type="text"
                 size="small"
-                @click.stop="manageCourse(course)"
+                @click.stop="handleDeleteCourse(course)"
               >
-                <el-icon><Setting /></el-icon>
-                管理
+                <el-icon><Delete /></el-icon>
+                删除
               </el-button>
-              <el-dropdown @command="handleCourseAction" @click.stop>
-                <el-button type="text" size="small">
-                  <el-icon><MoreFilled /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item :command="{action: 'copy', course}">
-                      <el-icon><CopyDocument /></el-icon>复制课程
-                    </el-dropdown-item>
-                    <el-dropdown-item :command="{action: 'export', course}">
-                      <el-icon><Download /></el-icon>导出数据
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                      :command="{action: 'delete', course}"
-                      divided
-                    >
-                      <el-icon><Delete /></el-icon>删除课程
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
             </div>
           </div>
           
@@ -207,31 +151,23 @@
             <el-descriptions-item label="课程名称">
               {{ selectedCourse.name }}
             </el-descriptions-item>
-            <el-descriptions-item label="课程代码">
-              {{ selectedCourse.code }}
+            <el-descriptions-item label="课程ID">
+              {{ selectedCourse.id }}
             </el-descriptions-item>
-            <el-descriptions-item label="学分">
-              {{ selectedCourse.credits }}
+            <el-descriptions-item label="授课教师">
+              {{ getTeacherNameSync(selectedCourse.teacherId) }}
             </el-descriptions-item>
-            <el-descriptions-item label="学时">
-              {{ selectedCourse.duration }}
+            <el-descriptions-item label="上课地点">
+              {{ selectedCourse.classroom || '未设置' }}
             </el-descriptions-item>
-            <el-descriptions-item label="学期">
-              {{ selectedCourse.semester }}
+            <el-descriptions-item label="上课时间">
+              {{ selectedCourse.time || '未设置' }}
             </el-descriptions-item>
-            <el-descriptions-item label="状态">
-              <el-tag :type="getStatusType(selectedCourse.status)">
-                {{ getStatusText(selectedCourse.status) }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="学生人数">
-              {{ selectedCourse.studentCount }}
+            <el-descriptions-item label="课程评价">
+              {{ selectedCourse.evaluation || '暂无评价' }}
             </el-descriptions-item>
             <el-descriptions-item label="创建时间">
               {{ formatDate(selectedCourse.createTime) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="课程描述" :span="2">
-              {{ selectedCourse.description }}
             </el-descriptions-item>
           </el-descriptions>
           
@@ -240,19 +176,19 @@
             <el-row :gutter="20">
               <el-col :span="8">
                 <div class="stat-item">
-                  <div class="stat-number">{{ selectedCourse.chapterCount || 12 }}</div>
+                  <div class="stat-number">{{ selectedCourse.chapterCount || 0 }}</div>
                   <div class="stat-label">章节数</div>
                 </div>
               </el-col>
               <el-col :span="8">
                 <div class="stat-item">
-                  <div class="stat-number">{{ selectedCourse.resourceCount || 45 }}</div>
+                  <div class="stat-number">{{ selectedCourse.resourceCount || 0 }}</div>
                   <div class="stat-label">资源数</div>
                 </div>
               </el-col>
               <el-col :span="8">
                 <div class="stat-item">
-                  <div class="stat-number">{{ selectedCourse.homeworkCount || 8 }}</div>
+                  <div class="stat-number">{{ selectedCourse.homeworkCount || 0 }}</div>
                   <div class="stat-label">作业数</div>
                 </div>
               </el-col>
@@ -272,11 +208,14 @@
   
   <script>
   import { ref, reactive, onMounted } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
-  import { formatDate } from '@/utils'
-  import { courseApi, courseUtils } from '@/api/course'
-  import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Search, Refresh, User, Edit, Delete } from '@element-plus/icons-vue'
+import { formatDate } from '@/utils'
+import { courseApi, courseUtils } from '@/api/course'
+import { getTeacherName as getTeacherNameApi } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
+import { courseLogHelper } from '@/utils/logHelper'
   
   export default {
     name: 'CourseList',
@@ -286,9 +225,7 @@
   
       // 搜索表单
       const searchForm = reactive({
-        name: '',
-        status: '',
-        semester: ''
+        name: ''
       })
   
       // 分页信息
@@ -307,26 +244,6 @@
   
       // 加载状态
       const loading = ref(false)
-  
-      // 获取状态文本
-      const getStatusText = (status) => {
-        const statusMap = {
-          active: '进行中',
-          finished: '已结束',
-          pending: '未开始'
-        }
-        return statusMap[status] || '未知'
-      }
-  
-      // 获取状态类型
-      const getStatusType = (status) => {
-        const typeMap = {
-          active: 'success',
-          finished: 'info',
-          pending: 'warning'
-        }
-        return typeMap[status] || 'info'
-      }
   
       // 搜索课程
       const handleSearch = () => {
@@ -354,35 +271,7 @@
         router.push(`/dashboard/course/edit/${course.id}`)
       }
   
-      // 管理课程
-      const manageCourse = (course) => {
-        router.push(`/course/manage/${course.id}`)
-      }
-  
-      // 处理课程操作
-      const handleCourseAction = ({ action, course }) => {
-        switch (action) {
-          case 'copy':
-            handleCopyCourse(course)
-            break
-          case 'export':
-            handleExportCourse(course)
-            break
-          case 'delete':
-            handleDeleteCourse(course)
-            break
-        }
-      }
-  
-      // 复制课程
-      const handleCopyCourse = (course) => {
-        ElMessage.success(`课程 "${course.name}" 复制成功`)
-      }
-  
-      // 导出课程
-      const handleExportCourse = (course) => {
-        ElMessage.success(`课程 "${course.name}" 导出成功`)
-      }
+      
   
       // 删除课程
       const handleDeleteCourse = async (course) => {
@@ -401,6 +290,9 @@
           const response = await courseApi.deleteCourse(course.id)
           
           if (response.code === 0) {
+            // 记录删除课程的日志
+            await courseLogHelper.deleteCourse(course.name)
+            
             ElMessage.success('删除成功')
             loadCourseList() // 重新加载列表
           } else {
@@ -445,26 +337,20 @@
           }
   
           if (response.code === 0) {
-            // 转换后端数据为前端格式
+                        // 转换后端数据为前端格式
             let courses = response.data.map(courseUtils.transformCourseData)
+            
+            // 预加载教师姓名
+            await preloadTeacherNames(courses)
             
             // 应用搜索过滤
             if (searchForm.name) {
               courses = courses.filter(course =>
-                course.name.toLowerCase().includes(searchForm.name.toLowerCase())
+                course.name.toLowerCase().includes(searchForm.name.toLowerCase()) ||
+                getTeacherNameSync(course.teacherId).toLowerCase().includes(searchForm.name.toLowerCase())
               )
             }
-            if (searchForm.status) {
-              courses = courses.filter(course =>
-                course.status === searchForm.status
-              )
-            }
-            if (searchForm.semester) {
-              courses = courses.filter(course =>
-                course.semester === searchForm.semester
-              )
-            }
-  
+            
             // 分页处理
             const start = (pagination.currentPage - 1) * pagination.pageSize
             const end = start + pagination.pageSize
@@ -482,13 +368,126 @@
         }
       }
   
-      // 测试API连接
-      const testApiConnection = () => {
-        // 实现测试API连接的逻辑
-        ElMessage.success('API连接测试成功')
+      // 教师姓名缓存 - 使用响应式对象而不是Map
+      const teacherNameCache = ref({})
+
+      // 预加载教师姓名
+      const preloadTeacherNames = async (courses) => {
+        const teacherIds = [...new Set(courses.map(course => course.teacherId).filter(Boolean))]
+        
+        // 过滤掉已缓存的教师ID
+        const uncachedTeacherIds = teacherIds.filter(id => 
+          id !== userStore.userInfo.id && !(id in teacherNameCache.value)
+        )
+        
+        console.log('需要预加载的教师ID:', uncachedTeacherIds)
+        
+        if (uncachedTeacherIds.length === 0) {
+          console.log('所有教师姓名已缓存')
+          return
+        }
+        
+        // 并发获取所有未缓存的教师姓名
+        const promises = uncachedTeacherIds.map(async (teacherId) => {
+          try {
+            console.log(`正在获取教师 ${teacherId} 的姓名...`)
+            const response = await getTeacherNameApi(teacherId)
+            console.log(`教师 ${teacherId} API响应:`, response)
+            
+            if (response.code === 200 && response.data) {
+              teacherNameCache.value[teacherId] = response.data
+              console.log(`成功缓存教师 ${teacherId} 姓名: ${response.data}`)
+            } else if (response.code === 0 && response.data) {
+              // 兼容code为0的情况
+              teacherNameCache.value[teacherId] = response.data
+              console.log(`成功缓存教师 ${teacherId} 姓名: ${response.data}`)
+            } else {
+              console.warn(`教师 ${teacherId} API返回错误:`, response)
+              teacherNameCache.value[teacherId] = teacherId || '未知教师'
+            }
+          } catch (error) {
+            console.error(`获取教师 ${teacherId} 姓名失败:`, error)
+            teacherNameCache.value[teacherId] = teacherId || '未知教师'
+          }
+        })
+        
+        await Promise.all(promises)
+        console.log('教师姓名预加载完成，当前缓存:', teacherNameCache.value)
+      }
+
+      // 同步获取教师姓名（用于模板显示）
+      const getTeacherNameSync = (teacherId) => {
+        // 如果是当前用户，直接返回用户姓名
+        if (teacherId === userStore.userInfo.id) {
+          return userStore.userInfo.name || '当前用户'
+        }
+        
+        // 从缓存获取
+        const cachedName = teacherNameCache.value[teacherId]
+        if (cachedName && cachedName !== teacherId) {
+          return cachedName
+        }
+        
+        // 如果缓存中没有或缓存的就是ID本身，尝试异步获取
+        if (teacherId && !(teacherId in teacherNameCache.value)) {
+          getTeacherName(teacherId).catch(error => {
+            console.error(`获取教师 ${teacherId} 姓名失败:`, error)
+          })
+        }
+        
+        return teacherId || '未知教师'
+      }
+
+      // 异步获取教师姓名
+      const getTeacherName = async (teacherId) => {
+        // 如果是当前用户，直接返回用户姓名
+        if (teacherId === userStore.userInfo.id) {
+          return userStore.userInfo.name || '当前用户'
+        }
+        
+        // 检查缓存
+        if (teacherId in teacherNameCache.value) {
+          const cachedName = teacherNameCache.value[teacherId]
+          console.log(`从缓存获取教师 ${teacherId} 姓名: ${cachedName}`)
+          return cachedName
+        }
+        
+        try {
+          console.log(`调用API获取教师 ${teacherId} 姓名...`)
+          // 调用API获取教师姓名
+          const response = await getTeacherNameApi(teacherId)
+          console.log(`教师 ${teacherId} API响应:`, response)
+          
+          if (response.code === 200 && response.data) {
+            const teacherName = response.data
+            // 缓存结果
+            teacherNameCache.value[teacherId] = teacherName
+            console.log(`成功获取并缓存教师 ${teacherId} 姓名: ${teacherName}`)
+            return teacherName
+          } else if (response.code === 0 && response.data) {
+            // 兼容code为0的情况
+            const teacherName = response.data
+            teacherNameCache.value[teacherId] = teacherName
+            console.log(`成功获取并缓存教师 ${teacherId} 姓名: ${teacherName}`)
+            return teacherName
+          } else {
+            // API调用失败，返回默认值
+            console.warn(`教师 ${teacherId} API返回错误:`, response)
+            const fallbackName = teacherId || '未知教师'
+            teacherNameCache.value[teacherId] = fallbackName
+            return fallbackName
+          }
+        } catch (error) {
+          console.error(`获取教师 ${teacherId} 姓名失败:`, error)
+          // 出错时返回默认值
+          const fallbackName = teacherId || '未知教师'
+          teacherNameCache.value[teacherId] = fallbackName
+          return fallbackName
+        }
       }
   
       onMounted(() => {
+        console.log('课程列表组件挂载，用户信息:', userStore.userInfo)
         loadCourseList()
       })
   
@@ -499,18 +498,16 @@
         selectedCourse,
         courseDetailVisible,
         loading,
-        getStatusText,
-        getStatusType,
         handleSearch,
         handleReset,
         viewCourse,
         editCourse,
-        manageCourse,
-        handleCourseAction,
+        handleDeleteCourse,
         handleSizeChange,
         handleCurrentChange,
         formatDate,
-        testApiConnection
+        getTeacherName,
+        getTeacherNameSync
       }
     }
   }
@@ -585,29 +582,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-  
-  .course-status {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #fff;
-  }
-  
-  .course-status.active {
-    background: rgba(103, 194, 58, 0.9);
-  }
-  
-  .course-status.finished {
-    background: rgba(144, 147, 153, 0.9);
-  }
-  
-  .course-status.pending {
-    background: rgba(230, 162, 60, 0.9);
   }
   
   .course-content {

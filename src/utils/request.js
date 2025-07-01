@@ -1,11 +1,11 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { userLogHelper } from '@/utils/logHelper'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_BASE_API || '/api',
-
+  baseURL: '/api',
   timeout: 15000
 })
 
@@ -40,8 +40,8 @@ service.interceptors.response.use(
   response => {
     const res = response.data
     
-    // 如果返回的状态码不是200，说明接口有问题
-    if (res.code !== 200) {
+    // 如果返回的状态码不是0或200，说明接口有问题
+    if (res.code !== 0 && res.code !== 200) {
       ElMessage({
         message: res.message || '请求失败',
         type: 'error',
@@ -58,8 +58,16 @@ service.interceptors.response.use(
             cancelButtonText: '取消',
             type: 'warning'
           }
-        ).then(() => {
+        ).then(async () => {
           const userStore = useUserStore()
+          
+          // 记录自动退出登录日志
+          try {
+            await userLogHelper.logout(`${userStore.userName} - 登录状态过期自动退出`)
+          } catch (error) {
+            console.error('记录自动退出登录日志失败:', error)
+          }
+          
           userStore.logout()
           location.reload()
         })
@@ -82,6 +90,14 @@ service.interceptors.response.use(
           break
         case 401:
           message = '未授权，请重新登录'
+          // 记录401错误导致的自动退出登录
+          const userStore = useUserStore()
+          if (userStore.isLoggedIn) {
+            userLogHelper.logout(`${userStore.userName} - 401错误自动退出`).catch(error => {
+              console.error('记录401错误退出日志失败:', error)
+            })
+            userStore.logout()
+          }
           break
         case 403:
           message = '拒绝访问'

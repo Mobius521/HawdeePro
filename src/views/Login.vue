@@ -68,7 +68,7 @@
       <div class="login-footer">
         <p class="demo-info">
           <el-icon><InfoFilled /></el-icon>
-          演示账号: teacher/123456, assistant/123456, admin/123456
+          演示账号: asd/123456(教师),admin/123456(管理员),assistant/123456(助教)
         </p>
       </div>
     </div>
@@ -81,6 +81,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { login } from '@/api/auth'
+import { userLogHelper } from '@/utils/logHelper'
 
 export default {
   name: 'Login',
@@ -122,6 +123,9 @@ export default {
 
         if (result.success) {
           ElMessage.success('登录成功')
+
+          // 记录登录日志
+          await userLogHelper.login(loginForm.username)
 
           // 记住密码
           if (loginForm.remember) {

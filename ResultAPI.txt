@@ -12,9 +12,8 @@
 ●请求参数（Request Body）：
 
 {
-  "courseId": "C001",
+  "courseName": "叽里咕噜",
   "teacherId": "T123",
-  "subjectId": "S001",
   "time": "周一第1-2节",
   "evaluation": "优秀",
   "classroom": "教室A101"
@@ -38,8 +37,8 @@
 
 {
   "courseId": "C001",
+  "courseName": "叽里咕噜",
   "teacherId": "T123",
-  "subjectId": "S001",
   "time": "周二第3-4节",
   "evaluation": "良好",
   "classroom": "教室B202"
@@ -86,8 +85,8 @@ id	String	课程编号
   "message": "操作成功",
   "data": {
     "courseId": "C001",
+    "courseName": "叽里咕噜",
     "teacherId": "T123",
-    "subjectId": "S001",
     "time": "周一第1-2节",
     "evaluation": "优秀",
     "classroom": "教室A101"
@@ -107,16 +106,16 @@ id	String	课程编号
   "data": [
     {
       "courseId": "C001",
+      "courseName": "叽里咕噜",
       "teacherId": "T123",
-      "subjectId": "S001",
       "time": "周一第1-2节",
       "evaluation": "优秀",
       "classroom": "教室A101"
     },
     {
       "courseId": "C002",
+      "courseName": "叽里咕噜",
       "teacherId": "T124",
-      "subjectId": "S002",
       "time": "周三第5-6节",
       "evaluation": "良好",
       "classroom": "教室B202"
@@ -141,6 +140,7 @@ teacherId	String	教师编号
   "data": [
     {
       "courseId": "C001",
+      "courseName": "叽里咕噜",
       "teacherId": "T123",
       "subjectId": "S001",
       "time": "周一第1-2节",
@@ -237,7 +237,7 @@ teacherId	String	教师编号
 
 {
   "staffId": "S1001",
-  "operationContent": "导入学生信息"
+  "operationContent": "操作内容"
 }
 
 ●⚠️ logId 和 operationTime 会在后台自动生成，无需前端传递。
@@ -270,4 +270,237 @@ operationContent	String	操作内容描述
 
 
 如果你还需要我 加上 Swagger 注解版本 或 分页查询版本，可以继续告诉我。
+
+
+
+
+
+
+以下是你提供的 ResourceController 类的完整接口文档，采用标准 RESTful 接口说明格式，涵盖了资源的展示、上传、下载、检索、删除和分享等功能，适合前后端联调或接入 Swagger 文档工具。
+
+
+
+
+🧾 教师认证与信息接口文档
+🟩 1. 登录接口
+●接口地址：/auth/login
+●请求方式：POST
+●请求参数：
+参数名	类型	是否必填	描述
+username	String	是	用户名（系统为 staff_id 或用户名）
+password	String	是	密码（明文密码，后端校验）
+●响应示例（成功）：
+json
+复制编辑
+{"code": 200,"msg": "登录成功","data": "{token=xxx.yyy.zzz, userInfo={id=1001, name=张老师, role=teacher}}"}
+●响应字段说明：
+字段	类型	描述
+code	int	响应状态码（200成功，400失败）
+msg	String	提示信息
+data	String	包含 JWT 令牌和用户信息（字符串形式，建议改为 Map<String,Object>）
+●备注：
+○当前代码写死了账号密码（admin 和 123456），建议从请求参数中获取；
+○建议将 Result<String> 改为 Result<Map<String, Object>> 更利于前端解析。
+
+🟦 2. 注销接口
+●接口地址：/auth/logout
+●请求方式：POST
+●请求头：
+参数名	示例值	是否必填	描述
+Authorization	Bearer xxx.yyy.zzz	是	用户 JWT 令牌
+●响应示例：
+json
+复制编辑
+{"code": 200,"msg": "操作成功","data": ""}
+●说明：
+○注销操作是服务端标记 token 失效（如将 token 存入黑名单或不做处理，仅前端删除），当前代码调用 jwtUtil.invalidateToken(userId)；
+○若你未实现黑名单机制，token 实际不会被服务端主动失效处理。
+
+🟨 3. 根据 staff_id 获取教师姓名
+●接口地址：/auth/getname/{staff_id}
+●请求方式：GET
+●路径参数：
+参数名	类型	是否必填	描述
+staff_id	String	是	教师工号
+●响应示例：
+json
+复制编辑
+{"code": 200,"msg": "操作成功","data": "张老师"}
+●说明：
+○查询教师姓名，调用 TeacherMapper.getname(staff_id)；
+○若未查到应返回空字符串或提示信息。
+
+
+📚 课程资源管理模块接口文档（ResourceController）
+●基础路径（Base Path）：/resource
+●模块说明：管理教师上传的课程资源，支持文件元信息的存储、资源展示、模糊检索、分享等功能。实际资源存储于阿里云或其他对象存储平台。
+
+1. 📂 获取教师上传的所有资源
+●URL：/resource/list/{teacherId}
+●请求方式：GET
+●路径参数：
+参数名	类型	描述
+teacherId	String	教师的唯一编号
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "resourceId": "abc123",
+      "teacherId": "T001",
+      "resourceType": "文档",
+      "resourceUrl": "https://oss.aliyun.com/resource/abc123.pdf",
+      "uploadTime": "2025-06-29T10:30:00"
+    }
+  ]
+}
+
+
+2. 🔍 资源检索（模糊搜索）
+●URL：/resource/search
+●请求方式：GET
+●请求参数：
+参数名	类型	是否必填	描述
+keyword	String	是	搜索关键字
+teacherId	String	是	教师编号
+●示例：/resource/search?keyword=英语&teacherId=T001
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "resourceId": "res456",
+      "teacherId": "T001",
+      "resourceType": "视频",
+      "resourceUrl": "https://oss.aliyun.com/resource/video.mp4",
+      "uploadTime": "2025-06-29T11:00:00"
+    }
+  ]
+}
+
+
+3. ⬆️ 上传资源（元信息记录）
+●URL：/resource/upload
+●请求方式：POST
+●请求体类型：application/json
+●请求体参数（仅提交资源元数据，文件由前端上传到 OSS）：
+
+{
+  "teacherId": "T001",
+  "resourceType": "文档",
+  "resourceUrl": "https://oss.aliyun.com/resource/abc123.pdf",
+  "uploadTime": "2025-06-29T10:30:00"
+}
+
+⚠️ 注意：
+●resourceId 由后端 UUID 生成。
+●uploadTime 可由前端传入，也可由后端补全当前时间。
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "上传成功"
+}
+
+
+4. ⬇️ 下载资源（获取URL）
+●URL：/resource/download/{id}
+●请求方式：GET
+●路径参数：
+参数名	类型	描述
+id	String	资源编号
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "https://oss.aliyun.com/resource/abc123.pdf"
+}
+
+前端可直接访问该 URL 实现下载或预览功能。
+
+5. 🗑️ 删除资源
+●URL：/resource/delete/{id}
+●请求方式：DELETE
+●路径参数：
+参数名	类型	描述
+id	String	资源编号
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "删除成功"
+}
+
+
+6. 🔗 分享资源给其他教师
+●URL：/resource/share
+●请求方式：POST
+●请求参数类型：application/x-www-form-urlencoded
+●请求参数：
+参数名	类型	是否必填	描述
+resourceId	String	是	要分享的资源编号
+targetTeacherId	String	是	接收资源的教师编号
+●响应示例：
+
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": "分享成功"
+}
+
+后端实现可能复制资源记录或更新授权信息，具体取决于系统设计。
+
+✅ 实体类说明：Resource
+字段名	类型	描述
+resourceId	String	资源唯一编号，UUID 生成
+teacherId	String	所属教师编号
+resourceType	String	类型（文档、视频、图片等）
+resourceUrl	String	OSS 返回的资源访问链接
+uploadTime	LocalDateTime	上传时间
+
+📦 返回统一结构（Result）
+
+{
+  "code": 0,             // 0 表示成功，1 表示失败
+  "message": "操作成功",  // 或 “上传失败”等错误信息
+  "data": "返回的数据"    // 或数组、对象、URL 等
+}
+
+
+
+需要我帮你生成 Swagger 注解版本？或者你是否使用阿里云 OSS SDK，我可以帮你生成上传代码模板。
+
+
+
+
+
+
+
+🤖 AI 调用模块接口文档（WenxinController）
+●基础路径（Base Path）：/wenxin
+●模块说明：用于接入 AI 模型（如文心一言），实现聊天或自动生成题目等智能功能。
+
+1. 💬 调用文心一言模型生成内容
+●URL：/wenxin/chat
+●请求方式：POST
+●请求参数类型：application/x-www-form-urlencoded
+●请求参数：
+参数名	类型	是否必填	描述
+message	String	是	用户发送的对话内容、提示词
+●示例请求：
+bash
+复制编辑
+POST /wenxin/chat Content-Type: application/x-www-form-urlencoded  message=帮我生成一道初中物理题 
+●响应示例：
+json
+复制编辑
+{"code": 0,"message": "操作成功","data": "以下是为你生成的物理题：一个质量为2kg的物体在水平地面上受到10N的恒力作用，求..."}
+●
 

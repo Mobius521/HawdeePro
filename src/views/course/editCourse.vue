@@ -106,10 +106,11 @@
   
   <script>
   import { ref, reactive, onMounted } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { ElMessage } from 'element-plus'
-  import { courseApi, courseUtils } from '@/api/course'
-  import { useUserStore } from '@/stores/user'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { courseApi, courseUtils } from '@/api/course'
+import { useUserStore } from '@/stores/user'
+import { courseLogHelper } from '@/utils/logHelper'
   
   export default {
     name: 'CourseEdit',
@@ -153,7 +154,7 @@
             const courseData = response.data
             // 将后端数据转换为前端格式
             Object.assign(courseForm, {
-              name: courseData.subjectId,
+              name: courseData.courseName,
               code: courseData.courseId,
               description: courseData.evaluation || '',
               teacherId: courseData.teacherId,
@@ -182,8 +183,8 @@
           // 准备提交数据
           const submitData = {
             courseId: courseForm.code,
+            courseName: courseForm.name,
             teacherId: courseForm.teacherId || userStore.userInfo.id || 'T123',
-            subjectId: courseForm.name,
             time: courseForm.time || '周一第1-2节',
             evaluation: courseForm.description || '良好',
             classroom: courseForm.classroom || '教室A101'
@@ -193,6 +194,9 @@
           const response = await courseApi.updateCourse(submitData)
   
           if (response.code === 0) {
+            // 记录修改课程的日志
+            await courseLogHelper.updateCourse(courseForm.name)
+            
             ElMessage.success('课程修改成功')
             router.push('/dashboard/course/list')
           } else {

@@ -248,6 +248,7 @@
 <script>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Document, Download, User, Reading, Clock, TrendCharts, Promotion } from '@element-plus/icons-vue'
 
 export default {
   name: 'PublicPortal',

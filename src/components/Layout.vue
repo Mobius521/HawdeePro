@@ -61,70 +61,94 @@
               router
               class="sidebar-menu"
             >
+              <!-- 工作台 -->
               <el-menu-item index="/dashboard/home">
                 <el-icon><House /></el-icon>
                 <template #title>工作台</template>
               </el-menu-item>
               
-              <el-menu-item index="/dashboard/portal">
+              <!-- 个人中心 -->
+              <el-menu-item index="/dashboard/profile">
+                <el-icon><User /></el-icon>
+                <template #title>个人中心</template>
+              </el-menu-item>
+              
+              <!-- 网站门户 - 仅管理员可见 -->
+              <el-menu-item v-if="userStore.isAdmin" index="/dashboard/portal">
                 <el-icon><Monitor /></el-icon>
                 <template #title>网站门户</template>
               </el-menu-item>
               
+              <!-- 课程管理 -->
               <el-sub-menu index="/dashboard/course">
                 <template #title>
                   <el-icon><Reading /></el-icon>
                   <span>课程管理</span>
                 </template>
                 <el-menu-item index="/dashboard/course/list">课程列表</el-menu-item>
-                <el-menu-item index="/dashboard/course/create">创建课程</el-menu-item>
+                <el-menu-item index="/dashboard/course/schedule">课程表</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher" index="/dashboard/course/create">创建课程</el-menu-item>
               </el-sub-menu>
               
+              <!-- 资源管理 -->
               <el-sub-menu index="/dashboard/resource">
                 <template #title>
                   <el-icon><FolderOpened /></el-icon>
                   <span>资源管理</span>
                 </template>
                 <el-menu-item index="/dashboard/resource/list">资源列表</el-menu-item>
-                <el-menu-item index="/dashboard/resource/upload">上传资源</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher" index="/dashboard/resource/upload">上传资源</el-menu-item>
               </el-sub-menu>
               
+              <!-- 考试管理 -->
               <el-sub-menu index="/dashboard/exam">
                 <template #title>
                   <el-icon><Document /></el-icon>
-                  <span>试卷管理</span>
+                  <span>考试管理</span>
                 </template>
                 <el-menu-item index="/dashboard/exam/list">试卷列表</el-menu-item>
-                <el-menu-item index="/dashboard/exam/upload">上传试卷</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher" index="/dashboard/exam/upload">上传试卷</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher || userStore.isAssistant" index="/dashboard/exam/update">修改试卷</el-menu-item>
               </el-sub-menu>
               
+              <!-- 作业管理 -->
               <el-sub-menu index="/dashboard/homework">
                 <template #title>
                   <el-icon><EditPen /></el-icon>
                   <span>作业管理</span>
                 </template>
                 <el-menu-item index="/dashboard/homework/list">作业列表</el-menu-item>
-                <el-menu-item index="/dashboard/homework/review">批改作业</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher || userStore.isAssistant" index="/dashboard/homework/review">作业批改</el-menu-item>
+                <el-menu-item index="/dashboard/homework/statistics">作业统计</el-menu-item>
               </el-sub-menu>
               
+              <!-- 直播管理 -->
               <el-sub-menu index="/dashboard/live">
                 <template #title>
                   <el-icon><VideoPlay /></el-icon>
                   <span>直播管理</span>
                 </template>
                 <el-menu-item index="/dashboard/live/list">直播列表</el-menu-item>
-                <el-menu-item index="/dashboard/live/test">直播测试</el-menu-item>
+                <el-menu-item v-if="userStore.isTeacher" index="/dashboard/live/test">创建直播</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/dashboard/assessment">
+              <!-- 学情分析 - 仅教师可见 -->
+              <el-sub-menu v-if="userStore.isTeacher" index="/dashboard/analysis">
                 <template #title>
-                  <el-icon><Checked /></el-icon>
-                  <span>测评管理</span>
+                  <el-icon><Star /></el-icon>
+                  <span>学情分析</span>
                 </template>
-                <el-menu-item index="/dashboard/assessment/list">测评列表</el-menu-item>
-                <el-menu-item index="/dashboard/assessment/create">创建测评</el-menu-item>
+                <el-menu-item index="/dashboard/analysis/list">分析列表</el-menu-item>
+                <el-menu-item index="/dashboard/analysis/detail">分析详情</el-menu-item>
               </el-sub-menu>
               
+              <!-- 日志管理 -->
+              <el-menu-item index="/dashboard/log">
+                <el-icon><Document /></el-icon>
+                <template #title>日志管理</template>
+              </el-menu-item>
+              
+              <!-- 成绩管理 -->
               <el-sub-menu index="/dashboard/grade">
                 <template #title>
                   <el-icon><TrendCharts /></el-icon>
@@ -134,41 +158,14 @@
                 <el-menu-item index="/dashboard/grade/statistics">成绩统计</el-menu-item>
               </el-sub-menu>
               
-              <el-sub-menu index="/dashboard/training">
+              <!-- 信息中心 -->
+              <el-sub-menu index="/dashboard/info">
                 <template #title>
-                  <el-icon><Tools /></el-icon>
-                  <span>实训管理</span>
+                  <el-icon><MessageBox /></el-icon>
+                  <span>信息中心</span>
                 </template>
-                <el-menu-item index="/dashboard/training/list">实训项目</el-menu-item>
-                <el-menu-item index="/dashboard/training/create">创建实训</el-menu-item>
-              </el-sub-menu>
-              
-              <el-sub-menu index="/dashboard/survey">
-                <template #title>
-                  <el-icon><List /></el-icon>
-                  <span>问卷调查</span>
-                </template>
-                <el-menu-item index="/dashboard/survey/list">问卷列表</el-menu-item>
-                <el-menu-item index="/dashboard/survey/create">创建问卷</el-menu-item>
-                <el-menu-item index="/dashboard/survey/result">调查结果</el-menu-item>
-              </el-sub-menu>
-              
-              <el-sub-menu index="/dashboard/evaluation">
-                <template #title>
-                  <el-icon><Star /></el-icon>
-                  <span>教学评价</span>
-                </template>
-                <el-menu-item index="/dashboard/evaluation/list">评价列表</el-menu-item>
-                <el-menu-item index="/dashboard/evaluation/analysis">评价分析</el-menu-item>
-              </el-sub-menu>
-              
-              <el-sub-menu index="/dashboard/support">
-                <template #title>
-                  <el-icon><QuestionFilled /></el-icon>
-                  <span>问题中心</span>
-                </template>
-                <el-menu-item index="/dashboard/support/list">问题列表</el-menu-item>
-                <el-menu-item index="/dashboard/support/faq">常见问题</el-menu-item>
+                <el-menu-item index="/dashboard/info/list">信息列表</el-menu-item>
+                <el-menu-item index="/dashboard/info/faq">常见信息</el-menu-item>
               </el-sub-menu>
               
               <!-- 管理员专用菜单 -->
@@ -190,7 +187,7 @@
         <el-main class="layout-content">
           <!-- 面包屑导航 -->
           <el-breadcrumb class="breadcrumb" separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/dashboard/home' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item
               v-for="item in breadcrumbs"
               :key="item.path"
@@ -211,10 +208,11 @@
   
   <script>
   import { computed, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
-  import { useAppStore } from '@/stores/app'
-  import { useUserStore } from '@/stores/user'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
+import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user'
+import { userLogHelper } from '@/utils/logHelper'
   
   export default {
     name: 'Layout',
@@ -242,10 +240,10 @@
       const handleUserCommand = (command) => {
         switch (command) {
           case 'profile':
-            router.push('/profile')
+            router.push('/dashboard/profile')
             break
           case 'settings':
-            router.push('/settings')
+            router.push('/dashboard/admin/settings')
             break
           case 'logout':
             handleLogout()
@@ -259,7 +257,14 @@
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
-        }).then(() => {
+        }).then(async () => {
+          // 记录退出登录日志
+          try {
+            await userLogHelper.logout(userStore.userName)
+          } catch (error) {
+            console.error('记录退出登录日志失败:', error)
+          }
+          
           userStore.logout()
           router.push('/publicPortal')
         })
@@ -286,12 +291,15 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    background: #f5f7fa;
   }
   
   .layout-header {
-    background: #fff;
-    border-bottom: 1px solid #e4e7ed;
-    box-shadow: 0 1px 4px rgba(0,21,41,.08);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1000;
   }
   
   .header-content {
@@ -310,13 +318,25 @@
   .sidebar-toggle {
     margin-right: 20px;
     font-size: 18px;
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 4px;
+    padding: 8px;
+    transition: all 0.3s;
+  }
+  
+  .sidebar-toggle:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.05);
   }
   
   .system-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: #303133;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
     margin: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
   
   .header-right {
@@ -329,22 +349,39 @@
     cursor: pointer;
   }
   
+  .header-item .el-button {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 4px;
+    transition: all 0.3s;
+  }
+  
+  .header-item .el-button:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.05);
+  }
+  
   .user-info {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.3s;
+    cursor: pointer;
   }
   
   .user-info:hover {
-    background-color: #f5f7fa;
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.02);
   }
   
   .user-name {
     font-size: 14px;
-    color: #606266;
+    color: #fff;
+    font-weight: 500;
   }
   
   .layout-main {
@@ -356,15 +393,55 @@
     background: #fff;
     border-right: 1px solid #e4e7ed;
     transition: width 0.3s;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
   }
   
   .sidebar-menu {
     border-right: none;
     height: 100%;
+    background: #fff;
+  }
+  
+  .sidebar-menu .el-menu-item {
+    height: 50px;
+    line-height: 50px;
+    margin: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.3s;
+  }
+  
+  .sidebar-menu .el-menu-item:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    transform: translateX(4px);
+  }
+  
+  .sidebar-menu .el-menu-item.is-active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  
+  .sidebar-menu .el-sub-menu__title {
+    height: 50px;
+    line-height: 50px;
+    margin: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.3s;
+  }
+  
+  .sidebar-menu .el-sub-menu__title:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+  }
+  
+  .sidebar-menu .el-sub-menu.is-active .el-sub-menu__title {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
   }
   
   .layout-content {
-    background: #f0f2f5;
+    background: #f5f7fa;
     padding: 0;
     overflow-y: auto;
   }
@@ -373,6 +450,20 @@
     padding: 16px 20px;
     background: #fff;
     border-bottom: 1px solid #e4e7ed;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  
+  .breadcrumb .el-breadcrumb__item {
+    font-size: 14px;
+  }
+  
+  .breadcrumb .el-breadcrumb__inner {
+    color: #606266;
+    transition: color 0.3s;
+  }
+  
+  .breadcrumb .el-breadcrumb__inner:hover {
+    color: #667eea;
   }
   
   .page-content {
@@ -393,5 +484,24 @@
     .page-content {
       padding: 10px;
     }
+    
+    .sidebar-menu .el-menu-item,
+    .sidebar-menu .el-sub-menu__title {
+      margin: 2px 4px;
+    }
+  }
+  
+  /* 滚动条样式 */
+  .el-scrollbar__bar {
+    background: rgba(0,0,0,0.1);
+  }
+  
+  .el-scrollbar__thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+  
+  .el-scrollbar__thumb:hover {
+    background: rgba(0,0,0,0.3);
   }
   </style>

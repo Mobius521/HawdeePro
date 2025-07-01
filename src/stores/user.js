@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { login as loginApi, logout as logoutApi } from '@/api/auth'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -26,23 +27,71 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    // 登录
+    // 登录 - 调用真实后端API
     async login(credentials) {
-      try {
-        // 模拟登录API调用
-        const response = await this.mockLogin(credentials)
+        try {
+            const response = await loginApi(credentials)
+            console.log('后端返回的完整响应:', response)
         
-        this.token = response.token
-        this.userInfo = response.userInfo
-        this.permissions = response.permissions
+            // 兼容后端data为字符串的情况
+            let dataObj = response.data
+            if (typeof dataObj === 'string') {
+              // 用正则提取 token
+              let token = ''
+              let userInfo = {}
+              const tokenMatch = dataObj.match(/token=([^,}]+)/)
+              if (tokenMatch) token = tokenMatch[1].trim()
+              const userInfoMatch = dataObj.match(/userInfo=\{([^}]+)\}/)
+              if (userInfoMatch) {
+                userInfoMatch[1].split(',').forEach(pair => {
+                  const [key, value] = pair.split('=').map(s => s.trim())
+                  userInfo[key] = value
+                })
+              }
+              dataObj = { token, userInfo }
+              console.log('兼容解析后的data对象:', dataObj)
+            } else {
+              console.log('解析后的data对象:', dataObj)
+            }
         
-        localStorage.setItem('userToken', this.token)
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
-        
-        return { success: true }
-      } catch (error) {
-        return { success: false, message: error.message }
-      }
+            if (!dataObj) {
+              console.error('data对象为空')
+              return { success: false, message: '服务器返回数据格式错误' }
+            }
+            if (!dataObj.token) {
+              console.error('token为空')
+              return { success: false, message: '服务器未返回token' }
+            }
+            this.token = dataObj.token
+            if (dataObj.userInfo) {
+              this.userInfo = {
+                id: dataObj.userInfo.id || '',
+                name: dataObj.userInfo.name || '',
+                email: dataObj.userInfo.email || '',
+                avatar: dataObj.userInfo.avatar || '',
+                role: dataObj.userInfo.role || 'teacher',
+                department: dataObj.userInfo.department || '',
+                phone: dataObj.userInfo.phone || ''
+              }
+            } else {
+              this.userInfo = {
+                id: '',
+                name: credentials.username || '',
+                email: '',
+                avatar: '',
+                role: 'teacher',
+                department: '',
+                phone: ''
+              }
+            }
+            this.permissions = this.getPermissionsByRole(this.userInfo.role)
+            localStorage.setItem('userToken', this.token)
+            localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+            return { success: true }
+          } catch (error) {
+            console.error('登录失败:', error)
+            return { success: false, message: error.message }
+          }
     },
 
     // 注册
@@ -57,22 +106,29 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 登出
-    logout() {
-      this.token = ''
-      this.userInfo = {
-        id: '',
-        name: '',
-        email: '',
-        avatar: '',
-        role: 'teacher',
-        department: '',
-        phone: ''
+    // 登出 - 调用真实后端API
+    async logout() {
+      try {
+        await logoutApi()
+      } catch (error) {
+        console.error('登出API调用失败:', error)
+      } finally {
+        // 无论API是否成功，都清除本地数据
+        this.token = ''
+        this.userInfo = {
+          id: '',
+          name: '',
+          email: '',
+          avatar: '',
+          role: 'teacher',
+          department: '',
+          phone: ''
+        }
+        this.permissions = []
+        
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userInfo')
       }
-      this.permissions = []
-      
-      localStorage.removeItem('userToken')
-      localStorage.removeItem('userInfo')
     },
 
     // 更新用户信息
@@ -81,56 +137,14 @@ export const useUserStore = defineStore('user', {
       localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
     },
 
-    // 模拟登录API
-    mockLogin(credentials) {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // 支持多角色登录
-          const users = {
-            'teacher': {
-              id: '1',
-              name: '张老师',
-              email: 'teacher@example.com',
-              avatar: '',
-              role: 'teacher',
-              department: '计算机学院',
-              phone: '13800138000',
-              permissions: ['course:read', 'course:write', 'student:read', 'grade:write', 'resource:manage']
-            },
-            'assistant': {
-              id: '2',
-              name: '李助教',
-              email: 'assistant@example.com',
-              avatar: '',
-              role: 'assistant',
-              department: '计算机学院',
-              phone: '13800138001',
-              permissions: ['course:read', 'student:read', 'grade:read', 'resource:read']
-            },
-            'admin': {
-              id: '3',
-              name: '王管理员',
-              email: 'admin@example.com',
-              avatar: '',
-              role: 'admin',
-              department: '信息中心',
-              phone: '13800138002',
-              permissions: ['system:manage', 'user:manage', 'course:audit', 'resource:audit']
-            }
-          }
-
-          const user = users[credentials.username]
-          if (user && credentials.password === '123456') {
-            resolve({
-              token: 'mock-jwt-token-' + Date.now(),
-              userInfo: user,
-              permissions: user.permissions
-            })
-          } else {
-            reject(new Error('用户名或密码错误'))
-          }
-        }, 1000)
-      })
+    // 根据角色获取权限
+    getPermissionsByRole(role) {
+      const permissions = {
+        'teacher': ['course:read', 'course:write', 'student:read', 'grade:write', 'resource:manage'],
+        'assistant': ['course:read', 'student:read', 'grade:read', 'resource:read'],
+        'admin': ['system:manage', 'user:manage', 'course:audit', 'resource:audit']
+      }
+      return permissions[role] || []
     },
 
     // 模拟注册API
@@ -154,6 +168,7 @@ export const useUserStore = defineStore('user', {
       if (userInfo && token) {
         this.userInfo = JSON.parse(userInfo)
         this.token = token
+        this.permissions = this.getPermissionsByRole(this.userInfo.role)
       }
     }
   }
