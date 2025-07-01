@@ -1,7 +1,11 @@
 <template>
   <div class="student-analysis">
     <div class="page-header">
-      <h2>学生学情分析</h2>
+      <div class="header-content">
+        <h2>学生学情分析</h2>
+        <p class="course-name">{{ courseName }}</p>
+        <p class="teacher-info">{{ userStore.userName }} 老师</p>
+      </div>
       <div class="header-actions">
         <el-button type="primary" @click="generateReport">
           <el-icon><Document /></el-icon>
@@ -266,9 +270,12 @@
 
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Document, Download, User, Reading, Clock, TrendCharts, Star } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Document, Download, User, Reading, Clock, TrendCharts, Star, Search, Refresh } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
+import { analysisApi, analysisUtils } from '@/api/analysis'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'StudentAnalysis',
@@ -283,11 +290,18 @@ export default {
     VChart
   },
   setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const userStore = useUserStore()
     const loading = ref(false)
     const selectedStudent = ref(null)
     const suggestionDialogVisible = ref(false)
     const editingSuggestion = ref({})
     const editingIndex = ref(-1)
+    
+    // 从路由参数获取课程信息
+    const courseId = route.query.courseId
+    const courseName = route.query.courseName || '未知课程'
 
     const filterForm = reactive({
       studentId: '',
@@ -308,50 +322,13 @@ export default {
       overdue: 0
     })
 
-    // 模拟数据
-    const studentList = ref([
-      { id: 1, name: '张三', avgScore: 85, studyTime: 120, status: 'excellent' },
-      { id: 2, name: '李四', avgScore: 78, studyTime: 95, status: 'good' },
-      { id: 3, name: '王五', avgScore: 65, studyTime: 60, status: 'warning' }
-    ])
-
-    const courseList = ref([
-      { id: 1, name: 'Vue.js基础教程' },
-      { id: 2, name: 'JavaScript进阶' },
-      { id: 3, name: '数据结构与算法' }
-    ])
-
+    // 学生列表和课程列表
+    const studentList = ref([])
+    const courseList = ref([])
+    
+    // 分析数据
     const analysisData = reactive({
-      students: [
-        {
-          id: 1,
-          name: '张三',
-          avgScore: 85,
-          studyTime: 120,
-          status: 'excellent',
-          studyRecords: [
-            { id: 1, time: '2024-01-15 10:00', title: 'Vue.js基础学习', description: '学习了Vue.js的基本语法和组件', duration: 45 },
-            { id: 2, time: '2024-01-15 14:30', title: '作业完成', description: '完成了Vue.js基础作业', duration: 30 }
-          ],
-          suggestions: [
-            { title: '学习建议', content: '建议继续深入学习Vue.js的高级特性，如Vuex状态管理' },
-            { title: '练习建议', content: '可以尝试开发一个完整的Vue.js项目来巩固所学知识' }
-          ]
-        },
-        {
-          id: 2,
-          name: '李四',
-          avgScore: 78,
-          studyTime: 95,
-          status: 'good',
-          studyRecords: [
-            { id: 3, time: '2024-01-15 09:00', title: 'JavaScript复习', description: '复习了JavaScript的基础知识', duration: 60 }
-          ],
-          suggestions: [
-            { title: '学习建议', content: '建议加强JavaScript基础知识的掌握，特别是异步编程部分' }
-          ]
-        }
-      ]
+      students: []
     })
 
     // 成绩趋势图配置
@@ -387,38 +364,94 @@ export default {
 
     // 获取状态文本
     const getStatusText = (status) => {
-      const statusMap = {
-        excellent: '优秀',
-        good: '良好',
-        warning: '需改进'
-      }
-      return statusMap[status] || '未知'
+      return analysisUtils.getStatusText(status)
     }
 
     // 选择学生
-    const selectStudent = (student) => {
+    const selectStudent = async (student) => {
       selectedStudent.value = student
+      await loadStudentData(student.id)
       updateStats()
+    }
+
+    // 加载学生详细数据
+    const loadStudentData = async (studentId) => {
+      try {
+        // 加载学习记录
+        const recordsResponse = await analysisApi.getStudyRecords(studentId)
+        if (recordsResponse.code === 0) {
+          selectedStudent.value.studyRecords = recordsResponse.data.map(analysisUtils.transformStudyRecordData)
+        }
+
+        // 加载作业情况
+        const homeworkResponse = await analysisApi.getHomeworkRecords(studentId)
+        if (homeworkResponse.code === 0) {
+          selectedStudent.value.homeworkRecords = homeworkResponse.data.map(analysisUtils.transformHomeworkData)
+          // 更新作业统计
+          Object.assign(homeworkStats, analysisUtils.calculateHomeworkStats(selectedStudent.value.homeworkRecords))
+        }
+
+        // 加载个性化建议
+        const adviceResponse = await analysisApi.getAdvice(studentId)
+        if (adviceResponse.code === 0) {
+          selectedStudent.value.suggestions = adviceResponse.data.map(analysisUtils.transformAdviceData)
+        }
+      } catch (error) {
+        console.error('加载学生数据失败:', error)
+        ElMessage.error('加载学生数据失败')
+      }
     }
 
     // 更新统计数据
     const updateStats = () => {
       if (selectedStudent.value) {
         stats.totalStudents = analysisData.students.length
-        stats.avgScore = selectedStudent.value.avgScore
-        stats.avgStudyTime = selectedStudent.value.studyTime
+        stats.avgScore = selectedStudent.value.avgScore || 0
+        stats.avgStudyTime = selectedStudent.value.studyTime || 0
         stats.completionRate = Math.round(Math.random() * 20 + 80)
-
-        homeworkStats.completed = Math.floor(Math.random() * 10 + 15)
-        homeworkStats.pending = Math.floor(Math.random() * 5 + 3)
-        homeworkStats.overdue = Math.floor(Math.random() * 3)
       }
     }
 
     // 筛选
-    const handleFilter = () => {
-      // 实现筛选逻辑
-      ElMessage.success('筛选完成')
+    const handleFilter = async () => {
+      if (!filterForm.courseId) {
+        ElMessage.warning('请选择课程')
+        return
+      }
+      
+      // 权限检查：确保只能查看自己的课程
+      if (!userStore.isAdmin) {
+        const teacherId = userStore.userInfo.id
+        if (!teacherId) {
+          ElMessage.error('用户信息不完整，请重新登录')
+          return
+        }
+        
+        // 这里可以添加额外的课程权限验证
+        // 如果后端API支持，可以在获取学生列表时验证课程是否属于当前教师
+      }
+      
+      loading.value = true
+      try {
+        const response = await analysisApi.getStudentsByCourse(filterForm.courseId)
+        if (response.code === 0) {
+          analysisData.students = response.data.map(analysisUtils.transformStudentData)
+          studentList.value = analysisData.students
+          
+          // 更新统计数据
+          const calculatedStats = analysisUtils.calculateStudyStats(analysisData.students)
+          Object.assign(stats, calculatedStats)
+          
+          ElMessage.success('筛选完成')
+        } else {
+          ElMessage.error(response.message || '筛选失败')
+        }
+      } catch (error) {
+        console.error('筛选失败:', error)
+        ElMessage.error('筛选失败，请稍后重试')
+      } finally {
+        loading.value = false
+      }
     }
 
     // 重置筛选
@@ -441,14 +474,31 @@ export default {
     }
 
     // 重新生成建议
-    const regenerateSuggestions = () => {
-      if (selectedStudent.value) {
-        // 模拟重新生成建议
-        selectedStudent.value.suggestions = [
-          { title: '学习建议', content: '基于最新学习数据分析，建议加强实践练习' },
-          { title: '时间管理', content: '建议合理安排学习时间，保持每天2-3小时的学习' }
-        ]
-        ElMessage.success('建议已重新生成')
+    const regenerateSuggestions = async () => {
+      if (!selectedStudent.value) {
+        ElMessage.warning('请先选择一个学生')
+        return
+      }
+
+      try {
+        const adviceData = {
+          studentId: selectedStudent.value.id,
+          title: '学习建议',
+          content: '基于最新学习数据分析，建议加强实践练习，合理安排学习时间。',
+          recordId: ''
+        }
+        
+        const response = await analysisApi.addAdvice(adviceData)
+        if (response.code === 0) {
+          // 重新加载建议
+          await loadStudentData(selectedStudent.value.id)
+          ElMessage.success('建议已重新生成')
+        } else {
+          ElMessage.error(response.message || '建议生成失败')
+        }
+      } catch (error) {
+        console.error('生成建议失败:', error)
+        ElMessage.error('生成建议失败')
       }
     }
 
@@ -460,18 +510,40 @@ export default {
     }
 
     // 保存建议
-    const saveSuggestion = () => {
+    const saveSuggestion = async () => {
       if (editingIndex.value >= 0 && selectedStudent.value) {
-        selectedStudent.value.suggestions[editingIndex.value] = { ...editingSuggestion.value }
-        suggestionDialogVisible.value = false
-        ElMessage.success('建议已保存')
+        try {
+          const adviceData = analysisUtils.transformToBackendAdviceData(editingSuggestion.value)
+          const response = await analysisApi.updateAdvice(adviceData)
+          
+          if (response.code === 0) {
+            // 更新本地数据
+            selectedStudent.value.suggestions[editingIndex.value] = { ...editingSuggestion.value }
+            suggestionDialogVisible.value = false
+            ElMessage.success('建议已保存')
+          } else {
+            ElMessage.error(response.message || '保存失败')
+          }
+        } catch (error) {
+          console.error('保存建议失败:', error)
+          ElMessage.error('保存建议失败')
+        }
       }
     }
 
-    onMounted(() => {
+    onMounted(async () => {
+      // 如果没有课程ID，自动跳回列表页
+      if (!courseId) {
+        ElMessage.warning('请先选择课程进行分析')
+        router.replace('/dashboard/analysis/list')
+        return
+      }
+      // 如果有课程ID，自动加载学生列表
+      filterForm.courseId = courseId
+      await handleFilter()
       // 默认选择第一个学生
       if (analysisData.students.length > 0) {
-        selectStudent(analysisData.students[0])
+        await selectStudent(analysisData.students[0])
       }
     })
 
@@ -495,7 +567,9 @@ export default {
       exportData,
       regenerateSuggestions,
       editSuggestion,
-      saveSuggestion
+      saveSuggestion,
+      courseName,
+      userStore
     }
   }
 }
@@ -509,13 +583,26 @@ export default {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
-.page-header h2 {
-  margin: 0;
+.header-content h2 {
+  margin: 0 0 8px 0;
   color: #303133;
+}
+
+.course-name {
+  margin: 0;
+  color: #409eff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.teacher-info {
+  margin: 8px 0 0 0;
+  color: #909399;
+  font-size: 12px;
 }
 
 .header-actions {

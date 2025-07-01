@@ -70,7 +70,7 @@ export const resourceUtils = {
     return {
       id: backendData.resourceId,
       name: backendData.resourceName || '未命名资源',
-      type: this.getResourceType(backendData.resourceType),
+      type: resourceUtils.getResourceType(backendData.resourceType),
       size: backendData.size || 0,
       url: backendData.resourceUrl,
       courseName: backendData.courseName || '',
@@ -87,7 +87,7 @@ export const resourceUtils = {
   transformToBackendData(frontendData) {
     return {
       teacherId: frontendData.teacherId,
-      resourceType: this.getBackendResourceType(frontendData.type),
+      resourceType: frontendData.type,
       resourceUrl: frontendData.url,
       uploadTime: frontendData.uploadTime || new Date().toISOString(),
       resourceName: frontendData.name,

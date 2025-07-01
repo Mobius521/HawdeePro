@@ -31,22 +31,6 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="所属课程" prop="courseId">
-                  <el-select
-                    v-model="uploadForm.courseId"
-                    placeholder="请选择课程"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="course in courseList"
-                      :key="course.id"
-                      :label="course.name"
-                      :value="course.id"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
             </el-row>
   
             <el-form-item label="资源描述" prop="description">
@@ -230,7 +214,6 @@ import { useUserStore } from '@/stores/user'
   
       const uploadForm = reactive({
         name: '',
-        courseId: '',
         description: '',
         type: '',
         permission: 'course'
@@ -240,9 +223,6 @@ import { useUserStore } from '@/stores/user'
         name: [
           { required: true, message: '请输入资源名称', trigger: 'blur' }
         ],
-        courseId: [
-          { required: true, message: '请选择课程', trigger: 'change' }
-        ],
         type: [
           { required: true, message: '请选择资源类型', trigger: 'change' }
         ],
@@ -250,8 +230,6 @@ import { useUserStore } from '@/stores/user'
           { required: true, message: '请选择访问权限', trigger: 'change' }
         ]
       }
-  
-      const courseList = ref([])
   
       const fileList = ref([])
   
@@ -311,21 +289,6 @@ import { useUserStore } from '@/stores/user'
         fileList.value.splice(index, 1)
       }
   
-            // 加载课程列表
-      const loadCourseList = async () => {
-        try {
-          const response = await courseApi.getAllCourses()
-          if (response.code === 0) {
-            courseList.value = response.data.map(course => ({
-              id: course.courseId,
-              name: course.courseName
-            }))
-          }
-        } catch (error) {
-          console.error('加载课程列表失败:', error)
-        }
-      }
-
       // 开始上传
       const handleUpload = async () => {
         if (!uploadFormRef.value) return
@@ -363,7 +326,6 @@ import { useUserStore } from '@/stores/user'
                       teacherId: userStore.userInfo?.id || 'T123',
                       type: uploadForm.type,
                       name: file.name,
-                      courseId: uploadForm.courseId,
                       description: uploadForm.description,
                       permission: uploadForm.permission,
                       size: file.size,
@@ -401,7 +363,7 @@ import { useUserStore } from '@/stores/user'
           const successCount = fileList.value.filter(f => f.status === 'success').length
           if (successCount === fileList.value.length) {
             ElMessage.success('所有文件上传成功')
-            router.push('/resource/list')
+            router.push('/dashboard/resource/list')
           } else {
             ElMessage.warning(`成功上传 ${successCount} 个文件，${fileList.value.length - successCount} 个失败`)
           }
@@ -417,15 +379,11 @@ import { useUserStore } from '@/stores/user'
         router.back()
       }
 
-      // 组件挂载时加载课程列表
-      loadCourseList()
-
       return {
         uploadFormRef,
         uploadRef,
         uploadForm,
         uploadRules,
-        courseList,
         fileList,
         uploading,
         getFileTypeClass,
@@ -436,7 +394,6 @@ import { useUserStore } from '@/stores/user'
         removeFile,
         handleUpload,
         handleCancel,
-        loadCourseList,
         formatFileSize
       }
     }

@@ -7,7 +7,7 @@
           <p class="page-description">管理教学资源，包括文档、视频、音频等多媒体文件</p>
         </div>
         <div class="header-actions">
-          <el-button type="primary" @click="$router.push('/resource/upload')">
+          <el-button type="primary" @click="$router.push('/dashboard/resource/upload')">
             <el-icon><Upload /></el-icon>
             上传资源
           </el-button>
