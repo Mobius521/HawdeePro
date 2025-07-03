@@ -24,12 +24,21 @@
         class="register-form"
         @keyup.enter="handleRegister"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="name">
           <el-input
-            v-model="registerForm.username"
-            placeholder="请输入用户名"
+            v-model="registerForm.name"
+            placeholder="请输入用户名（登录用）"
             size="large"
             prefix-icon="User"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item prop="staffId">
+          <el-input
+            v-model="registerForm.staffId"
+            placeholder="请输入工号"
+            size="large"
+            prefix-icon="UserFilled"
             clearable
           />
         </el-form-item>
@@ -55,14 +64,17 @@
             clearable
           />
         </el-form-item>
-        <el-form-item prop="realName">
-          <el-input
-            v-model="registerForm.realName"
-            placeholder="请输入真实姓名"
+        <el-form-item prop="roleType">
+          <el-select
+            v-model="registerForm.roleType"
+            placeholder="请选择身份"
             size="large"
-            prefix-icon="UserFilled"
-            clearable
-          />
+            style="width: 100%"
+          >
+            <el-option label="教师" value="teacher" />
+            <el-option label="助教" value="assistant" />
+            <el-option label="系统管理员" value="admin" />
+          </el-select>
         </el-form-item>
         <el-form-item prop="phone">
           <el-input
@@ -82,18 +94,7 @@
             clearable
           />
         </el-form-item>
-        <el-form-item prop="role">
-          <el-select
-            v-model="registerForm.role"
-            placeholder="请选择身份"
-            size="large"
-            style="width: 100%"
-          >
-            <el-option label="教师" value="teacher" />
-            <el-option label="助教" value="assistant" />
-            <el-option label="系统管理员" value="admin" />
-          </el-select>
-        </el-form-item>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -136,19 +137,23 @@ export default {
     const loading = ref(false);
 
     const registerForm = reactive({
-      username: '',
+      name: '',
+      staffId: '',
       password: '',
       confirmPassword: '',
-      realName: '',
       phone: '',
       email: '',
-      role: 'teacher',
+      roleType: 'teacher',
     });
 
     const registerRules = {
-      username: [
+      name: [
         { required: true, message: '请输入用户名', trigger: 'blur' },
         { min: 2, max: 20, message: '用户名长度在 2 到 20 个字符', trigger: 'blur' },
+      ],
+      staffId: [
+        { required: true, message: '请输入工号', trigger: 'blur' },
+        { min: 3, max: 20, message: '工号长度在 3 到 20 个字符', trigger: 'blur' },
       ],
       password: [
         { required: true, message: '请输入密码', trigger: 'blur' },
@@ -167,12 +172,9 @@ export default {
           trigger: 'blur',
         },
       ],
-      realName: [
-        { required: true, message: '请输入真实姓名', trigger: 'blur' },
-      ],
       phone: [
         { required: true, message: '请输入电话号码', trigger: 'blur' },
-        { pattern: /^1[0-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' },
+        { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' },
       ],
       email: [
         { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -184,7 +186,7 @@ export default {
             }
           }, trigger: 'blur' },
       ],
-      role: [
+      roleType: [
         { required: true, message: '请选择身份', trigger: 'change' },
       ],
     };
@@ -197,22 +199,22 @@ export default {
         loading.value = true;
 
         const result = await userStore.register({
-          username: registerForm.username,
+          name: registerForm.name,
+          staffId: registerForm.staffId,
           password: registerForm.password,
-          realName: registerForm.realName,
           phone: registerForm.phone,
           email: registerForm.email,
-          role: registerForm.role,
+          roleType: registerForm.roleType,
         });
 
         if (result.success) {
           ElMessage.success('注册成功，请登录');
           router.push('/login');
         } else {
+
           ElMessage.error(result.message || '注册失败，请稍后重试');
         }
       } catch (error) {
-        console.error('注册失败:', error);
         ElMessage.error(error.message);
       } finally {
         loading.value = false;

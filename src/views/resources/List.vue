@@ -4,7 +4,7 @@
       <div class="page-header">
         <div class="header-content">
           <h2 class="page-title">资源管理</h2>
-          <p class="page-description">管理教学资源，包括文档、视频、音频等多媒体文件</p>
+          <p class="page-description">管理教学资源,包括文档、视频、ppt等多种文件</p>
         </div>
         <div class="header-actions">
           <el-button type="primary" @click="$router.push('/dashboard/resource/upload')">
@@ -22,12 +22,22 @@
               <el-icon><Document /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-number">{{ stats.totalFiles }}</div>
-              <div class="stat-label">总文件数</div>
+              <div class="stat-number">{{ stats.documentCount }}</div>
+              <div class="stat-label">文档文件</div>
             </div>
           </div>
         </el-col>
-        
+        <el-col :xs="12" :sm="6" :md="6" :lg="6">
+          <div class="stat-card warning">
+            <div class="stat-icon">
+              <el-icon><Files /></el-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ stats.pptCount }}</div>
+              <div class="stat-label">PPT文件</div>
+            </div>
+          </div>
+        </el-col>
         <el-col :xs="12" :sm="6" :md="6" :lg="6">
           <div class="stat-card success">
             <div class="stat-icon">
@@ -39,27 +49,14 @@
             </div>
           </div>
         </el-col>
-        
         <el-col :xs="12" :sm="6" :md="6" :lg="6">
-          <div class="stat-card warning">
+          <div class="stat-card info">
             <div class="stat-icon">
-              <el-icon><Picture /></el-icon>
+              <el-icon><Files /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-number">{{ stats.imageCount }}</div>
-              <div class="stat-label">图片文件</div>
-            </div>
-          </div>
-        </el-col>
-        
-        <el-col :xs="12" :sm="6" :md="6" :lg="6">
-          <div class="stat-card danger">
-            <div class="stat-icon">
-              <el-icon><FolderOpened /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ formatFileSize(stats.totalSize) }}</div>
-              <div class="stat-label">总大小</div>
+              <div class="stat-number">{{ stats.otherCount }}</div>
+              <div class="stat-label">其他文件</div>
             </div>
           </div>
         </el-col>
@@ -86,24 +83,8 @@
               <el-option label="全部" value="" />
               <el-option label="文档" value="document" />
               <el-option label="视频" value="video" />
-              <el-option label="音频" value="audio" />
-              <el-option label="图片" value="image" />
+              <el-option label="PPT" value="ppt" />
               <el-option label="其他" value="other" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="所属课程">
-            <el-select
-              v-model="searchForm.courseId"
-              placeholder="请选择课程"
-              clearable
-              style="width: 200px"
-            >
-              <el-option
-                v-for="course in courseList"
-                :key="course.id"
-                :label="course.name"
-                :value="course.id"
-              />
             </el-select>
           </el-form-item>
           <el-form-item label="上传时间">
@@ -166,7 +147,17 @@
   
       <!-- 网格视图 -->
       <div v-if="viewMode === 'grid'" class="grid-view">
-        <div class="resource-grid">
+        <!-- 空状态 -->
+        <div v-if="!loading && resourceList.length === 0" class="empty-state">
+          <el-empty description="暂无资源文件">
+            <el-button type="primary" @click="$router.push('/dashboard/resource/upload')">
+              上传第一个资源
+            </el-button>
+          </el-empty>
+        </div>
+        
+        <!-- 资源网格 -->
+        <div v-else class="resource-grid">
           <div
             v-for="resource in resourceList"
             :key="resource.id"
@@ -192,8 +183,10 @@
             
             <div class="resource-info">
               <h4 class="resource-title" :title="resource.name">{{ resource.name }}</h4>
+              <p v-if="resource.description" class="resource-description" :title="resource.description">
+                {{ resource.description }}
+              </p>
               <p class="resource-meta">
-                <span class="file-size">{{ formatFileSize(resource.size) }}</span>
                 <span class="upload-time">{{ formatDate(resource.uploadTime) }}</span>
               </p>
               <div class="resource-tags">
@@ -215,9 +208,6 @@
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{action: 'edit', resource}">
                       <el-icon><Edit /></el-icon>编辑信息
-                    </el-dropdown-item>
-                    <el-dropdown-item :command="{action: 'move', resource}">
-                      <el-icon><FolderAdd /></el-icon>移动到
                     </el-dropdown-item>
                     <el-dropdown-item :command="{action: 'copy', resource}">
                       <el-icon><CopyDocument /></el-icon>复制链接
@@ -241,7 +231,17 @@
   
       <!-- 列表视图 -->
       <div v-else class="list-view">
-        <div class="table-container card">
+        <!-- 空状态 -->
+        <div v-if="!loading && resourceList.length === 0" class="empty-state">
+          <el-empty description="暂无资源文件">
+            <el-button type="primary" @click="$router.push('/dashboard/resource/upload')">
+              上传第一个资源
+            </el-button>
+          </el-empty>
+        </div>
+        
+        <!-- 资源表格 -->
+        <div v-else class="table-container card">
           <el-table
             :data="resourceList"
             style="width: 100%"
@@ -260,8 +260,8 @@
                   </div>
                   <div class="file-details">
                     <div class="file-name">{{ row.name }}</div>
+                    <div v-if="row.description" class="file-description">{{ row.description }}</div>
                     <div class="file-meta">
-                      <span>{{ formatFileSize(row.size) }}</span>
                       <span>{{ formatDate(row.uploadTime) }}</span>
                     </div>
                   </div>
@@ -312,9 +312,6 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item :command="{action: 'move', resource: row}">
-                        <el-icon><FolderAdd /></el-icon>移动到
-                      </el-dropdown-item>
                       <el-dropdown-item :command="{action: 'copy', resource: row}">
                         <el-icon><CopyDocument /></el-icon>复制链接
                       </el-dropdown-item>
@@ -378,10 +375,29 @@
           
           <!-- 文档预览 -->
           <div v-else class="document-preview">
-            <div class="preview-placeholder">
+            <!-- 图片预览 -->
+            <div v-if="isImage(selectedResource)" class="image-preview">
+              <img :src="selectedResource.url" :alt="selectedResource.name" style="max-width: 100%; max-height: 600px;" />
+            </div>
+
+            <!-- PDF 预览 -->
+            <iframe
+              v-else-if="isPdf(selectedResource)"
+              :src="selectedResource.url"
+              style="width: 100%; height: 600px; border: none;"
+            ></iframe>
+
+            <!-- Office 文档在线预览 -->
+            <iframe
+              v-else-if="isOffice(selectedResource)"
+              :src="getOfficePreviewUrl(selectedResource.url)"
+              style="width: 100%; height: 600px; border: none;"
+            ></iframe>
+
+            <!-- 其它文档类型 -->
+            <div v-else class="preview-placeholder">
               <el-icon size="64"><Document /></el-icon>
               <p>{{ selectedResource.name }}</p>
-              <p>文件大小：{{ formatFileSize(selectedResource.size) }}</p>
               <el-button type="primary" @click="downloadResource(selectedResource)">
                 下载文件
               </el-button>
@@ -416,17 +432,16 @@ import { useUserStore } from '@/stores/user'
 
       // 统计数据
       const stats = reactive({
-        totalFiles: 0,
+        documentCount: 0,
+        pptCount: 0,
         videoCount: 0,
-        imageCount: 0,
-        totalSize: 0
+        otherCount: 0,
       })
   
       // 搜索表单
       const searchForm = reactive({
         name: '',
         type: '',
-        courseId: '',
         dateRange: []
       })
   
@@ -456,8 +471,7 @@ import { useUserStore } from '@/stores/user'
         const typeMap = {
           document: '文档',
           video: '视频',
-          audio: '音频',
-          image: '图片',
+          ppt: 'PPT',
           other: '其他'
         }
         return typeMap[type] || '未知'
@@ -605,6 +619,7 @@ import { useUserStore } from '@/stores/user'
           }
         ).then(async () => {
           try {
+            console.log('删除资源:', resource)
             const response = await resourceApi.deleteResource(resource.id)
             if (response.code === 0) {
               // 从列表中移除
@@ -719,10 +734,10 @@ import { useUserStore } from '@/stores/user'
             // 更新统计数据
       const updateStats = () => {
         const resources = allResources.value
-        stats.totalFiles = resources.length
+        stats.documentCount = resources.filter(r => r.type === 'document').length
+        stats.pptCount = resources.filter(r => r.type === 'ppt').length
         stats.videoCount = resources.filter(r => r.type === 'video').length
-        stats.imageCount = resources.filter(r => r.type === 'image').length
-        stats.totalSize = resources.reduce((total, r) => total + (r.size || 0), 0)
+        stats.otherCount = resources.filter(r => r.type === 'other').length
       }
 
       // 加载课程列表
@@ -745,34 +760,74 @@ import { useUserStore } from '@/stores/user'
         loading.value = true
         
         try {
-          const teacherId = userStore.userInfo?.id || 'T123' // 从用户store获取教师ID
+          // 确保获取到当前教师的ID
+          const teacherId = userStore.userInfo?.id
+          if (!teacherId) {
+            ElMessage.error('未获取到教师信息，请重新登录')
+            return
+          }
+
+          console.log('当前教师ID:', teacherId)
+          console.log('搜索条件:', searchForm)
+
           let response
 
           // 如果有搜索条件，使用搜索接口
-          if (searchForm.name || searchForm.type || searchForm.courseId) {
+          if (searchForm.name || searchForm.type) {
             const keyword = searchForm.name || ''
+            console.log('使用搜索接口，关键词:', keyword)
             response = await resourceApi.searchResources(keyword, teacherId)
           } else {
             // 否则获取所有资源
+            console.log('获取所有资源')
             response = await resourceApi.getResourcesByTeacher(teacherId)
           }
+
+          console.log('API响应:', response)
 
           if (response.code === 0) {
             // 转换后端数据为前端格式
             const transformedResources = response.data.map(resourceUtils.transformResourceData)
+            console.log('转换后的资源数据:', transformedResources)
+            
+            // 如果没有数据，显示提示
+            if (!response.data || response.data.length === 0) {
+              console.log('没有找到资源数据')
+              allResources.value = []
+              resourceList.value = []
+              pagination.total = 0
+              updateStats()
+              return
+            }
+            
+            // 确保只显示当前教师的资源（前端二次过滤）
+            const currentTeacherResources = transformedResources.filter(resource => 
+              resource.teacherId === teacherId
+            )
+            console.log('过滤后的当前教师资源:', currentTeacherResources)
             
             // 应用前端过滤
-            let filteredResources = transformedResources
-            
+            let filteredResources = currentTeacherResources
+
+            // 文件名/描述模糊搜索
+            if (searchForm.name) {
+              const keyword = searchForm.name.toLowerCase()
+              filteredResources = filteredResources.filter(resource =>
+                resource.name.toLowerCase().includes(keyword) ||
+                (resource.description && resource.description.toLowerCase().includes(keyword))
+              )
+            }
             if (searchForm.type) {
               filteredResources = filteredResources.filter(resource =>
                 resource.type === searchForm.type
               )
             }
-            if (searchForm.courseId) {
-              filteredResources = filteredResources.filter(resource =>
-                resource.courseId === searchForm.courseId
-              )
+            if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+              const [start, end] = searchForm.dateRange
+              filteredResources = filteredResources.filter(resource => {
+                const upload = new Date(resource.uploadTime)
+                return upload >= new Date(start) && upload <= new Date(end)
+              })
             }
 
             // 更新所有资源数据
@@ -784,6 +839,9 @@ import { useUserStore } from '@/stores/user'
             
             resourceList.value = filteredResources.slice(start, end)
             pagination.total = filteredResources.length
+            
+            console.log('最终资源列表:', resourceList.value)
+            console.log('分页信息:', pagination)
             
             // 更新统计数据
             updateStats()
@@ -798,9 +856,39 @@ import { useUserStore } from '@/stores/user'
         }
       }
   
+      // 判断是否为 PDF
+      const isPdf = (resource) => {
+        return resource && resource.url && /\.pdf$/i.test(resource.url)
+      }
+      // 判断是否为 Office 文档
+      const isOffice = (resource) => {
+        return resource && resource.url && /\.(doc|docx|xls|xlsx|ppt|pptx)$/i.test(resource.url)
+      }
+      // 获取 Office Online 预览链接
+      const getOfficePreviewUrl = (url) => {
+        return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+      }
+  
+      // 判断是否为图片
+      const isImage = (resource) => {
+        return resource && resource.url && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(resource.url)
+      }
+  
       onMounted(async () => {
-        await loadCourseList()
-        await loadResourceList()
+        try {
+          // 确保用户信息已初始化
+          if (!userStore.userInfo?.id) {
+            userStore.initUserInfo()
+          }
+          
+          console.log('用户信息:', userStore.userInfo)
+          
+          await loadCourseList()
+          await loadResourceList()
+        } catch (error) {
+          console.error('组件初始化失败:', error)
+          ElMessage.error('页面加载失败，请刷新重试')
+        }
       })
   
       return {
@@ -835,7 +923,11 @@ import { useUserStore } from '@/stores/user'
         loadCourseList,
         updateStats,
         formatDate,
-        formatFileSize
+        formatFileSize,
+        isPdf,
+        isOffice,
+        getOfficePreviewUrl,
+        isImage
       }
     }
   }
@@ -844,6 +936,16 @@ import { useUserStore } from '@/stores/user'
   <style scoped>
   .resource-list {
     padding: 0;
+  }
+
+  .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
   }
   
   .page-header {
@@ -1046,6 +1148,19 @@ import { useUserStore } from '@/stores/user'
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .resource-description {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #606266;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
   
   .resource-meta {
     margin: 0 0 12px 0;
@@ -1104,6 +1219,15 @@ import { useUserStore } from '@/stores/user'
     font-size: 14px;
     font-weight: 500;
     color: #303133;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-description {
+    font-size: 12px;
+    color: #606266;
     margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;

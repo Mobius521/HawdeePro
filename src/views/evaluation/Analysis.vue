@@ -124,7 +124,7 @@
               :key="student.id"
               class="student-item"
               :class="{ active: selectedStudent?.id === student.id }"
-              @click="selectStudent(student)"
+              @click="selectStudent(student); showAdviceDialog(student)"
             >
               <div class="student-avatar">
                 <el-avatar :size="40">{{ student.name.charAt(0) }}</el-avatar>
@@ -213,69 +213,84 @@
             </el-row>
           </div>
         </div>
-
-        <!-- 个性化建议 -->
-        <div class="card">
-          <div class="card-header">
-            <h3>个性化建议</h3>
-            <el-button type="text" size="small" @click="regenerateSuggestions">
-              重新生成
-            </el-button>
-          </div>
-          <div class="suggestions">
-            <div
-              v-for="(suggestion, index) in selectedStudent?.suggestions || []"
-              :key="index"
-              class="suggestion-item"
-            >
-              <div class="suggestion-header">
-                <el-icon><Star /></el-icon>
-                <span class="suggestion-title">{{ suggestion.title }}</span>
-                <el-button type="text" size="small" @click="editSuggestion(index)">
-                  编辑
-                </el-button>
-              </div>
-              <div class="suggestion-content">{{ suggestion.content }}</div>
-            </div>
-          </div>
-        </div>
       </el-col>
     </el-row>
 
     <!-- 编辑建议对话框 -->
     <el-dialog
-      v-model="suggestionDialogVisible"
-      title="编辑建议"
+      v-model="adviceDialogVisible"
+      title="个性化建议"
       width="500px"
     >
-      <el-form :model="editingSuggestion" label-width="80px">
-        <el-form-item label="建议标题">
-          <el-input v-model="editingSuggestion.title" />
-        </el-form-item>
-        <el-form-item label="建议内容">
-          <el-input
-            v-model="editingSuggestion.content"
-            type="textarea"
-            :rows="4"
-          />
-        </el-form-item>
-      </el-form>
+      <el-skeleton v-if="regenerateLoading || adviceLoading" rows="4" animated />
+      <el-empty v-else-if="adviceList.length === 0" description="暂无建议" />
+      <div v-else>
+        <el-timeline class="suggestion-timeline">
+          <el-timeline-item
+            v-for="(advice, index) in adviceList"
+            :key="advice.adviceId"
+            :timestamp="advice.createTime"
+            placement="top"
+            color="#409eff"
+          >
+            <div>
+              <div class="suggestion-title">
+                <el-icon style="margin-right:4px;"><Star /></el-icon>
+                {{ advice.title || '建议' }}
+              </div>
+              <div class="suggestion-content">{{ advice.content }}</div>
+              <div class="suggestion-actions">
+                <el-button type="text" size="small" @click="editSuggestion(index)">编辑</el-button>
+                <el-button type="text" size="small" @click="deleteSuggestion(advice.adviceId)">删除</el-button>
+              </div>
+            </div>
+          </el-timeline-item>
+        </el-timeline>
+      </div>
       <template #footer>
-        <el-button @click="suggestionDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveSuggestion">保存</el-button>
+        <div class="suggestion-dialog-footer">
+          <el-button @click="addSuggestion">新增建议</el-button>
+          <el-button type="primary" @click="regenerateSuggestions" :loading="regenerateLoading" :disabled="regenerateLoading">
+            <el-icon><Star /></el-icon>
+            重新生成建议
+          </el-button>
+        </div>
       </template>
+      <el-dialog
+        v-model="suggestionDialogVisible"
+        title="编辑建议"
+        width="500px"
+      >
+        <el-form :model="editingSuggestion" label-width="80px">
+          <el-form-item label="建议标题">
+            <el-input v-model="editingSuggestion.title" />
+          </el-form-item>
+          <el-form-item label="建议内容">
+            <el-input
+              v-model="editingSuggestion.content"
+              type="textarea"
+              :rows="4"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="suggestionDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveSuggestion">保存</el-button>
+        </template>
+      </el-dialog>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Download, User, Reading, Clock, TrendCharts, Star, Search, Refresh } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { analysisApi, analysisUtils } from '@/api/analysis'
 import { useUserStore } from '@/stores/user'
+import { v4 as uuidv4 } from 'uuid'
 
 export default {
   name: 'StudentAnalysis',
@@ -298,6 +313,12 @@ export default {
     const suggestionDialogVisible = ref(false)
     const editingSuggestion = ref({})
     const editingIndex = ref(-1)
+    const adviceDialogVisible = ref(false)
+    const adviceList = ref([])
+    const adviceLoading = ref(false)
+    const currentStudentId = ref('')
+    const currentCourseId = ref('')
+    const regenerateLoading = ref(false)
     
     // 从路由参数获取课程信息
     const courseId = route.query.courseId
@@ -418,30 +439,18 @@ export default {
         ElMessage.warning('请选择课程')
         return
       }
-      
-      // 权限检查：确保只能查看自己的课程
-      if (!userStore.isAdmin) {
-        const teacherId = userStore.userInfo.id
-        if (!teacherId) {
-          ElMessage.error('用户信息不完整，请重新登录')
-          return
-        }
-        
-        // 这里可以添加额外的课程权限验证
-        // 如果后端API支持，可以在获取学生列表时验证课程是否属于当前教师
-      }
-      
       loading.value = true
       try {
         const response = await analysisApi.getStudentsByCourse(filterForm.courseId)
         if (response.code === 0) {
-          analysisData.students = response.data.map(analysisUtils.transformStudentData)
+          analysisData.students = response.data.map(item => {
+            const stu = analysisUtils.transformStudentData(item)
+            return stu
+          })
           studentList.value = analysisData.students
-          
           // 更新统计数据
           const calculatedStats = analysisUtils.calculateStudyStats(analysisData.students)
           Object.assign(stats, calculatedStats)
-          
           ElMessage.success('筛选完成')
         } else {
           ElMessage.error(response.message || '筛选失败')
@@ -465,7 +474,7 @@ export default {
 
     // 生成分析报告
     const generateReport = () => {
-      ElMessage.success('分析报告生成中...')
+      ElMessage.success('分析报告生成开发中...')
     }
 
     // 导出数据
@@ -479,55 +488,133 @@ export default {
         ElMessage.warning('请先选择一个学生')
         return
       }
-
+      regenerateLoading.value = true
       try {
         const adviceData = {
-          studentId: selectedStudent.value.id,
-          title: '学习建议',
-          content: '基于最新学习数据分析，建议加强实践练习，合理安排学习时间。',
-          recordId: ''
+          StudentId: selectedStudent.value.id,
+          context: '请根据学生最新学习数据生成个性化建议'
         }
-        
-        const response = await analysisApi.addAdvice(adviceData)
-        if (response.code === 0) {
-          // 重新加载建议
-          await loadStudentData(selectedStudent.value.id)
-          ElMessage.success('建议已重新生成')
+        // 1. 先调AI生成建议
+        const response = await analysisApi.autoAdviceByAI(adviceData)
+        if (response.code === 0 && response.data) {
+          // 2. 拿到AI建议内容后，主动调新增接口
+          const addRes = await analysisApi.addAdvice({
+            adviceId: uuidv4(), // 生成唯一ID
+            studentId: selectedStudent.value.id,
+            content: response.data,
+            title: 'AI生成建议', // 可自定义
+            courseId: selectedStudent.value.courseId || filterForm.courseId || '',
+            // 其他必需字段
+          })
+          if (addRes.code === 0) {
+            await loadStudentData(selectedStudent.value.id)
+            await showAdviceDialog(selectedStudent.value)
+            await nextTick()
+            // 自动滚动到最新建议（假设建议区有ref="suggestionTimeline"）
+            const timeline = document.querySelector('.suggestion-timeline')
+            if (timeline) {
+              timeline.scrollTop = timeline.scrollHeight
+            }
+            ElMessage.success('建议已重新生成并保存')
+          } else {
+            ElMessage.error(addRes.message || '建议保存失败')
+          }
         } else {
           ElMessage.error(response.message || '建议生成失败')
         }
       } catch (error) {
         console.error('生成建议失败:', error)
         ElMessage.error('生成建议失败')
+      } finally {
+        regenerateLoading.value = false
       }
     }
 
     // 编辑建议
     const editSuggestion = (index) => {
       editingIndex.value = index
-      editingSuggestion.value = { ...selectedStudent.value.suggestions[index] }
+      editingSuggestion.value = { ...adviceList.value[index] }
       suggestionDialogVisible.value = true
     }
 
-    // 保存建议
+    const addSuggestion = () => {
+      editingSuggestion.value = {
+        adviceId: uuidv4(),
+        title: '',
+        content: '',
+        studentId: currentStudentId.value,
+        recordId: '',
+        courseId: currentCourseId.value || filterForm.courseId || '' // 再兜底
+      }
+      editingIndex.value = -1
+      suggestionDialogVisible.value = true
+    }
+
     const saveSuggestion = async () => {
-      if (editingIndex.value >= 0 && selectedStudent.value) {
+      if (!editingSuggestion.value.content) {
+        ElMessage.warning('建议内容不能为空')
+        return
+      }
+      if (editingIndex.value === -1) {
+        // 新增
+        const adviceData = analysisUtils.transformToBackendAdviceData(editingSuggestion.value)
+        const res = await analysisApi.addAdvice(adviceData)
+        if (res.code === 0) {
+          await showAdviceDialog({ id: editingSuggestion.value.studentId, courseId: editingSuggestion.value.courseId })
+          suggestionDialogVisible.value = false
+          ElMessage.success('新增成功')
+        } else {
+          ElMessage.error(res.message || '新增失败')
+        }
+      } else {
+        // 编辑
         try {
           const adviceData = analysisUtils.transformToBackendAdviceData(editingSuggestion.value)
           const response = await analysisApi.updateAdvice(adviceData)
-          
           if (response.code === 0) {
-            // 更新本地数据
-            selectedStudent.value.suggestions[editingIndex.value] = { ...editingSuggestion.value }
+            adviceList.value[editingIndex.value] = { ...editingSuggestion.value }
             suggestionDialogVisible.value = false
             ElMessage.success('建议已保存')
           } else {
             ElMessage.error(response.message || '保存失败')
           }
         } catch (error) {
-          console.error('保存建议失败:', error)
           ElMessage.error('保存建议失败')
         }
+      }
+    }
+
+    const showAdviceDialog = async (student) => {
+      // 保证 currentCourseId 一定有值，优先 student.courseId，没有就用 filterForm.courseId
+      currentStudentId.value = student.id
+      currentCourseId.value = student.courseId || filterForm.courseId || ''
+      adviceDialogVisible.value = true
+      adviceLoading.value = true
+      try {
+        const res = await analysisApi.getAdvice(student.id)
+        if (res.code === 0) {
+          adviceList.value = res.data.map(analysisUtils.transformAdviceData)
+        } else {
+          adviceList.value = []
+        }
+      } catch (e) {
+        adviceList.value = []
+      } finally {
+        adviceLoading.value = false
+      }
+    }
+
+    const deleteSuggestion = async (adviceId) => {
+      try {
+        const res = await analysisApi.deleteAdvice(adviceId)
+        if (res.code === 0) {
+          await showAdviceDialog(selectedStudent.value)
+          ElMessage.success('删除成功')
+        } else {
+          ElMessage.error(res.message || '删除失败')
+        }
+      } catch (e) {
+        ElMessage.error('删除失败')
       }
     }
 
@@ -569,7 +656,16 @@ export default {
       editSuggestion,
       saveSuggestion,
       courseName,
-      userStore
+      userStore,
+      adviceDialogVisible,
+      adviceList,
+      adviceLoading,
+      showAdviceDialog,
+      deleteSuggestion,
+      addSuggestion,
+      currentStudentId,
+      currentCourseId,
+      regenerateLoading
     }
   }
 }
@@ -828,6 +924,53 @@ export default {
 .suggestion-content {
   color: #606266;
   line-height: 1.5;
+}
+
+/* 个性化建议弹窗美化 */
+.suggestion-timeline .el-timeline-item__content {
+  padding: 12px 16px;
+  background: #f8fafd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px 0 rgba(64,158,255,0.06);
+  margin-bottom: 8px;
+  position: relative;
+}
+.suggestion-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+.suggestion-content {
+  font-size: 14px;
+  color: #303133;
+  background: #f4f8fb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  margin-top: 4px;
+  word-break: break-all;
+}
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.suggestion-actions .el-button {
+  padding: 2px 10px;
+  font-size: 13px;
+}
+.el-timeline-item__timestamp {
+  color: #909399 !important;
+  font-size: 12px !important;
+}
+.suggestion-dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
 }
 </style>
   

@@ -52,22 +52,8 @@
                   >
                     <el-option label="文档" value="document" />
                     <el-option label="视频" value="video" />
-                    <el-option label="音频" value="audio" />
-                    <el-option label="图片" value="image" />
+                    <el-option label="PPT" value="ppt" />
                     <el-option label="其他" value="other" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="访问权限" prop="permission">
-                  <el-select
-                    v-model="uploadForm.permission"
-                    placeholder="请选择权限"
-                    style="width: 100%"
-                  >
-                    <el-option label="公开" value="public" />
-                    <el-option label="课程内" value="course" />
-                    <el-option label="私有" value="private" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -87,7 +73,6 @@
                 :auto-upload="false"
                 :on-change="handleFileChange"
                 :on-remove="handleFileRemove"
-                :before-upload="beforeUpload"
                 :file-list="fileList"
               >
                 <div class="upload-content">
@@ -95,7 +80,7 @@
                   <div class="upload-text">
                     <p>将文件拖到此处，或<em>点击上传</em></p>
                     <p class="upload-tip">
-                      支持文档、视频、音频、图片等格式，单个文件不超过100MB
+                      支持文档、视频、PPT等格式，单个文件不超过200MB
                     </p>
                   </div>
                 </div>
@@ -198,6 +183,7 @@
   import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { UploadFilled, Delete, VideoPlay, Document, Files } from '@element-plus/icons-vue'
 import { formatFileSize } from '@/utils'
 import { resourceApi, resourceUtils } from '@/api/resource'
 import { courseApi } from '@/api/course'
@@ -216,7 +202,6 @@ import { useUserStore } from '@/stores/user'
         name: '',
         description: '',
         type: '',
-        permission: 'course'
       })
   
       const uploadRules = {
@@ -225,9 +210,6 @@ import { useUserStore } from '@/stores/user'
         ],
         type: [
           { required: true, message: '请选择资源类型', trigger: 'change' }
-        ],
-        permission: [
-          { required: true, message: '请选择访问权限', trigger: 'change' }
         ]
       }
   
@@ -236,13 +218,11 @@ import { useUserStore } from '@/stores/user'
       // 获取文件类型样式类
       const getFileTypeClass = (fileName) => {
         const ext = fileName.split('.').pop().toLowerCase()
-        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
-          return 'file-type-image'
-        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext)) {
+        if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext)) {
           return 'file-type-video'
-        } else if (['mp3', 'wav', 'flac', 'aac'].includes(ext)) {
-          return 'file-type-audio'
-        } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)) {
+        } else if (['ppt', 'pptx'].includes(ext)) {
+          return 'file-type-ppt'
+        } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'].includes(ext)) {
           return 'file-type-document'
         }
         return 'file-type-other'
@@ -251,13 +231,11 @@ import { useUserStore } from '@/stores/user'
       // 获取文件图标
       const getFileIcon = (fileName) => {
         const ext = fileName.split('.').pop().toLowerCase()
-        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
-          return 'Picture'
-        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext)) {
+        if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext)) {
           return 'VideoPlay'
-        } else if (['mp3', 'wav', 'flac', 'aac'].includes(ext)) {
-          return 'Headphones'
-        } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)) {
+        } else if (['ppt', 'pptx'].includes(ext)) {
+          return 'Document'
+        } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'].includes(ext)) {
           return 'Document'
         }
         return 'Files'
@@ -273,20 +251,28 @@ import { useUserStore } from '@/stores/user'
         fileList.value = files
       }
   
-      // 上传前验证
-      const beforeUpload = (file) => {
-        const isLt100M = file.size / 1024 / 1024 < 100
-  
-        if (!isLt100M) {
-          ElMessage.error('文件大小不能超过 100MB!')
-          return false
-        }
-        return true
-      }
-  
       // 移除文件
       const removeFile = (index) => {
         fileList.value.splice(index, 1)
+      }
+  
+      // 根据文件扩展名判断后端资源类型
+      const getBackendResourceTypeByFile = (fileName) => {
+        const ext = fileName.split('.').pop().toLowerCase()
+        if ([
+          'mp4', 'avi', 'mov', 'wmv', 'flv'
+        ].includes(ext)) {
+          return 'video'
+        } else if ([
+          'ppt', 'pptx'
+        ].includes(ext)) {
+          return 'ppt'
+        } else if ([
+          'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'
+        ].includes(ext)) {
+          return 'document'
+        }
+        return 'other'
       }
   
       // 开始上传
@@ -301,6 +287,17 @@ import { useUserStore } from '@/stores/user'
             return
           }
 
+          // 检查用户登录状态
+          const teacherId = userStore.userInfo?.id
+          if (!teacherId) {
+            ElMessage.error('用户信息获取失败，请重新登录')
+            return
+          }
+
+          console.log('开始上传,教师ID:', teacherId)
+          console.log('上传表单数据:', uploadForm)
+          console.log('文件列表:', fileList.value)
+
           uploading.value = true
 
           // 逐个上传文件
@@ -310,47 +307,37 @@ import { useUserStore } from '@/stores/user'
             file.percentage = 0
 
             try {
-              // 模拟文件上传到OSS的过程
-              // 在实际项目中，这里应该调用OSS SDK上传文件
-              await new Promise((resolve, reject) => {
-                const progressInterval = setInterval(() => {
-                  if (file.percentage < 90) {
-                    file.percentage += Math.random() * 20
-                  } else {
-                    clearInterval(progressInterval)
-                    // 模拟上传完成，生成OSS URL
-                    const ossUrl = `https://oss.aliyun.com/resource/${Date.now()}_${file.name}`
-                    
-                    // 构建资源数据
-                    const resourceData = {
-                      teacherId: userStore.userInfo?.id || 'T123',
-                      type: uploadForm.type,
-                      name: file.name,
-                      description: uploadForm.description,
-                      permission: uploadForm.permission,
-                      size: file.size,
-                      url: ossUrl,
-                      uploadTime: new Date().toISOString()
-                    }
+              // 模拟上传进度
+              const progressInterval = setInterval(() => {
+                if (file.percentage < 90) {
+                  file.percentage += Math.random() * 10
+                }
+              }, 200)
+              // 自动识别类型
+              const backendType = getBackendResourceTypeByFile(file.name)
+              console.log(backendType)
+              console.log(`上传文件 ${i + 1}/${fileList.value.length}:`, file.name)
+              // 调用后端API上传文件到OSS
+              const response = await resourceApi.uploadResourceFile(
+                file.raw, // 原始文件对象
+                teacherId, // 教师ID
+                backendType, // 自动识别类型
+                uploadForm.name || file.name, // 资源名称
+                uploadForm.description || '' // 资源描述
+              )
 
-                    // 转换数据格式并调用API记录资源信息
-                    const backendData = resourceUtils.transformToBackendData(resourceData)
-                    resourceApi.uploadResource(backendData).then(response => {
-                      if (response.code === 0) {
-                        file.percentage = 100
-                        file.status = 'success'
-                        resolve()
-                      } else {
-                        file.status = 'fail'
-                        reject(new Error(response.message || '资源信息保存失败'))
-                      }
-                    }).catch(error => {
-                      file.status = 'fail'
-                      reject(error)
-                    })
-                  }
-                }, 200)
-              })
+              clearInterval(progressInterval)
+              file.percentage = 100
+
+              console.log('上传响应:', response)
+
+              if (response.code === 0) {
+                file.status = 'success'
+                ElMessage.success(`文件 ${file.name} 上传成功`)
+              } else {
+                file.status = 'fail'
+                throw new Error(response.message || '上传失败')
+              }
 
             } catch (error) {
               console.error(`文件 ${file.name} 上传失败:`, error)
@@ -390,11 +377,11 @@ import { useUserStore } from '@/stores/user'
         getFileIcon,
         handleFileChange,
         handleFileRemove,
-        beforeUpload,
         removeFile,
         handleUpload,
         handleCancel,
-        formatFileSize
+        formatFileSize,
+        getBackendResourceTypeByFile
       }
     }
   }
@@ -533,12 +520,8 @@ import { useUserStore } from '@/stores/user'
     color: #67c23a;
   }
   
-  .file-icon.file-type-audio {
+  .file-icon.file-type-ppt {
     color: #e6a23c;
-  }
-  
-  .file-icon.file-type-image {
-    color: #f56c6c;
   }
   
   .file-icon.file-type-other {

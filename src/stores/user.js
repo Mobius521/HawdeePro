@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login as loginApi, logout as logoutApi } from '@/api/auth'
+import { login as loginApi, logout as logoutApi, register as registerApi, getProfile as getProfileApi, updateProfile as updateProfileApi, changePassword as changePasswordApi } from '@/api/auth'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -19,7 +19,7 @@ export const useUserStore = defineStore('user', {
   getters: {
     isLoggedIn: (state) => !!state.token,
     userName: (state) => state.userInfo.name || '未知用户',
-    userAvatar: (state) => state.userInfo.avatar || '/default-avatar.png',
+    userAvatar: (state) => state.userInfo.avatar || '/image.png',
     userRole: (state) => state.userInfo.role || 'teacher',
     isTeacher: (state) => state.userInfo.role === 'teacher',
     isAssistant: (state) => state.userInfo.role === 'assistant',
@@ -63,14 +63,12 @@ export const useUserStore = defineStore('user', {
               return { success: false, message: '服务器未返回token' }
             }
             this.token = dataObj.token
-            if (dataObj.userInfo) {
+                        if (dataObj.userInfo) {
               this.userInfo = {
                 id: dataObj.userInfo.id || '',
                 name: dataObj.userInfo.name || '',
                 email: dataObj.userInfo.email || '',
-                avatar: dataObj.userInfo.avatar || '',
-                role: dataObj.userInfo.role || 'teacher',
-                department: dataObj.userInfo.department || '',
+                role: dataObj.userInfo.role || dataObj.userInfo.roleType || 'teacher',
                 phone: dataObj.userInfo.phone || ''
               }
             } else {
@@ -78,10 +76,29 @@ export const useUserStore = defineStore('user', {
                 id: '',
                 name: credentials.username || '',
                 email: '',
-                avatar: '',
                 role: 'teacher',
-                department: '',
                 phone: ''
+              }
+            }
+            
+            // 登录成功后，立即获取完整的用户信息
+            if (this.userInfo.id) {
+              try {
+                const profileResult = await this.getProfile(this.userInfo.id)
+                if (profileResult.success && profileResult.data) {
+                  // 更新用户信息为完整的个人信息
+                  this.userInfo = {
+                    id: profileResult.data.staffId || profileResult.data.id || this.userInfo.id,
+                    name: profileResult.data.name || this.userInfo.name,
+                    email: profileResult.data.email || this.userInfo.email,
+                    role: profileResult.data.roleType || profileResult.data.role || this.userInfo.role,
+                    phone: profileResult.data.phone || this.userInfo.phone,
+                    signTime: profileResult.data.signTime || ''
+                  }
+                  localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+                }
+              } catch (error) {
+                console.error('获取完整用户信息失败:', error)
               }
             }
             this.permissions = this.getPermissionsByRole(this.userInfo.role)
@@ -94,14 +111,26 @@ export const useUserStore = defineStore('user', {
           }
     },
 
-    // 注册
+    // 注册 - 调用真实后端API
     async register(userData) {
       try {
-        // 模拟注册API调用
-        const response = await this.mockRegister(userData)
+        console.log('用户store开始注册，数据:', userData);
+        const response = await registerApi(userData)
+        console.log('注册API响应:', response)
+        console.log('响应状态码:', response.code);
+        console.log('响应消息:', response.message);
+        console.log('响应数据:', response.data);
         
-        return { success: true, message: '注册成功' }
+        // 检查多种可能的成功状态码
+        if (response.code === 200 || response.code === 0 || response.status === 200) {
+          console.log('注册成功，返回成功结果');
+          return { success: true, message: response.message || '注册成功' }
+        } else {
+          console.log('注册失败，返回失败结果:', response.message);
+          return { success: false, message: response.message || '注册失败' }
+        }
       } catch (error) {
+        console.error('注册API调用失败:', error)
         return { success: false, message: error.message }
       }
     },
@@ -119,9 +148,7 @@ export const useUserStore = defineStore('user', {
           id: '',
           name: '',
           email: '',
-          avatar: '',
           role: 'teacher',
-          department: '',
           phone: ''
         }
         this.permissions = []
@@ -131,7 +158,74 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 更新用户信息
+    // 获取个人信息
+    async getProfile(staffId) {
+      try {
+        const response = await getProfileApi(staffId)
+        console.log('获取个人信息响应:', response)
+        
+        if ((response.code === 200 || response.code === 0) && response.data) {
+          const profileData = response.data
+          this.userInfo = {
+            id: profileData.staffId || profileData.id || '',
+            name: profileData.name || '',
+            email: profileData.email || '',
+            role: profileData.roleType || profileData.role || 'teacher',
+            phone: profileData.phone || '',
+            signTime: profileData.signTime || ''
+          }
+          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+          return { success: true, data: profileData }
+        } else {
+          return { success: false, message: response.message || '获取个人信息失败' }
+        }
+      } catch (error) {
+        console.error('获取个人信息失败:', error)
+        return { success: false, message: error.message }
+      }
+    },
+
+    // 更新个人信息
+    async updateProfile(staffId, profileData) {
+      try {
+        const response = await updateProfileApi(staffId, profileData)
+        console.log('更新个人信息响应:', response)
+        
+        if (response.code === 200 || response.code === 0) {
+          // 更新本地用户信息
+          this.userInfo = { 
+            ...this.userInfo, 
+            name: profileData.name,
+            email: profileData.email,
+            phone: profileData.phone
+          }
+          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+          return { success: true, message: response.message || '更新成功' }
+        } else {
+          return { success: false, message: response.message || '更新失败' }
+        }
+      } catch (error) {
+        console.error('更新个人信息失败:', error)
+        return { success: false, message: error.message }
+      }
+    },
+
+    // 修改密码
+    async changePassword(staffId, passwordData) {
+      try {
+        const response = await changePasswordApi(staffId, passwordData)
+        if (response.code === 200) {
+          return { success: true, message: response.message || '密码修改成功' }
+        } else {
+          return { success: false, message: response.message || '密码修改失败' }
+        }
+      } catch (error) {
+        console.error('修改密码失败:', error)
+        return { success: false, message: error.message }
+      }
+    },
+
+    // 更新用户信息（本地更新）
     updateUserInfo(info) {
       this.userInfo = { ...this.userInfo, ...info }
       localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
@@ -145,20 +239,6 @@ export const useUserStore = defineStore('user', {
         'admin': ['system:manage', 'user:manage', 'course:audit', 'resource:audit']
       }
       return permissions[role] || []
-    },
-
-    // 模拟注册API
-    mockRegister(userData) {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // 模拟注册成功
-          console.log('注册用户数据:', userData)
-          resolve({
-            success: true,
-            message: '注册成功'
-          })
-        }, 1000)
-      })
     },
 
     // 初始化用户信息

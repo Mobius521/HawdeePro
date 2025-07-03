@@ -194,6 +194,11 @@
   import { useUserStore } from '@/stores/user'
   import { formatDate } from '@/utils'
   import VChart from 'vue-echarts'
+  import { courseApi } from '@/api/course'
+  import { resourceApi } from '@/api/resource'
+  import { getMyMessages } from '@/api/communication'
+  import { getLogList } from '@/api/log'
+  import { analysisApi } from '@/api/analysis'
   
   export default {
     name: 'Dashboard',
@@ -203,23 +208,25 @@
     setup() {
       const router = useRouter()
       const userStore = useUserStore()
+      const teacherId = userStore.userInfo.id
+      let courses = []
   
       // 当前日期
       const currentDate = ref(formatDate(new Date(), 'YYYY年MM月DD日'))
   
       // 今日统计
       const todayStats = reactive({
-        courses: 3,
-        students: 156,
-        homework: 12
+        courses: 0,
+        students: 0,
+        homework: 0
       })
   
       // 总体统计
       const stats = reactive({
-        totalCourses: 15,
-        totalStudents: 456,
-        totalHomework: 89,
-        totalExams: 23
+        totalCourses: 0,
+        totalStudents: 0,
+        totalHomework: 0,
+        totalExams: 0
       })
   
       // 课程进度图表配置
@@ -241,7 +248,7 @@
         },
         xAxis: {
           type: 'category',
-          data: ['第1周', '第2周', '第3周', '第4周']
+          data: []
         },
         yAxis: {
           type: 'value'
@@ -250,7 +257,7 @@
           {
             name: '计划课程',
             type: 'bar',
-            data: [12, 15, 18, 20],
+            data: [],
             itemStyle: {
               color: '#409eff'
             }
@@ -258,7 +265,7 @@
           {
             name: '已完成课程',
             type: 'bar',
-            data: [10, 14, 16, 18],
+            data: [],
             itemStyle: {
               color: '#67c23a'
             }
@@ -288,7 +295,9 @@
             ...baseActions,
             { name: '创建课程', icon: 'Plus', type: 'primary', path: '/dashboard/course/create' },
             { name: '布置作业', icon: 'EditPen', type: 'warning', path: '/dashboard/homework/create' },
-            { name: '上传资源', icon: 'Upload', type: 'info', path: '/dashboard/resource/upload' }
+            { name: '上传资源', icon: 'Upload', type: 'info', path: '/dashboard/resource/upload' },
+            { name: '批改作业', icon: 'Check', type: 'danger', path: '/dashboard/homework/review' },
+            { name: '成绩分析', icon: 'PieChart', type: 'info', path: '/dashboard/analysis' }
           ]
         } else if (userStore.isAssistant) {
           return [
@@ -309,66 +318,13 @@
       }
   
       // 最近活动
-      const recentActivities = ref([
-        {
-          id: 1,
-          title: '发布了新作业《数据结构练习》',
-          time: '2小时前',
-          type: 'homework',
-          icon: 'EditPen'
-        },
-        {
-          id: 2,
-          title: '上传了课程资源《算法分析PPT》',
-          time: '4小时前',
-          type: 'resource',
-          icon: 'Upload'
-        },
-        {
-          id: 3,
-          title: '创建了新课程《Web开发基础》',
-          time: '1天前',
-          type: 'course',
-          icon: 'Reading'
-        },
-        {
-          id: 4,
-          title: '批改了15份作业',
-          time: '2天前',
-          type: 'grade',
-          icon: 'Check'
-        }
-      ])
+      const recentActivities = ref([])
   
       // 待办事项
-      const todoList = ref([
-        { id: 1, text: '批改《数据库设计》作业', date: '今天', completed: false },
-        { id: 2, text: '准备下周课程PPT', date: '明天', completed: false },
-        { id: 3, text: '回复学生问题', date: '今天', completed: true },
-        { id: 4, text: '更新课程大纲', date: '本周', completed: false }
-      ])
+      const todoList = ref([])
   
       // 系统通知
-      const notifications = ref([
-        {
-          id: 1,
-          title: '系统将于今晚22:00进行维护',
-          time: '1小时前',
-          type: 'warning'
-        },
-        {
-          id: 2,
-          title: '新功能：支持视频直播教学',
-          time: '3小时前',
-          type: 'info'
-        },
-        {
-          id: 3,
-          title: '您有3个学生申请课程答疑',
-          time: '5小时前',
-          type: 'primary'
-        }
-      ])
+      const notifications = ref([])
   
       // 处理快速操作
       const handleQuickAction = (path) => {
@@ -377,7 +333,7 @@
   
       // 处理待办事项变更
       const handleTodoChange = (todo) => {
-        console.log('Todo changed:', todo)
+        // 可调用API保存变更
       }
   
       // 标记通知为已读
@@ -388,9 +344,80 @@
         }
       }
   
-      onMounted(() => {
-        // 初始化用户信息
-        userStore.initUserInfo()
+      // 动态获取数据
+      onMounted(async () => {
+        await userStore.initUserInfo()
+        // 1. 获取课程统计
+        if (userStore.userInfo.id) {
+          // 课程
+          const courseRes = await courseApi.getCoursesByTeacher(userStore.userInfo.id)
+          courses = courseRes?.data || []
+          stats.totalCourses = courses.length
+          todayStats.courses = courses.filter(c => c.time && c.time.includes(formatDate(new Date(), 'YYYY-MM-DD'))).length
+          // 学生（遍历课程并发获取，合并去重）
+          let studentSet = new Set()
+          const studentPromises = courses.map(async c => {
+            try {
+              const res = await analysisApi.getStudentsByCourse(c.courseId)
+              const students = res?.data || []
+              students.forEach(s => studentSet.add(s.studentId || s.id))
+            } catch (e) {}
+          })
+          await Promise.all(studentPromises)
+          stats.totalStudents = studentSet.size
+          todayStats.students = studentSet.size // 可根据在线状态调整
+          // 作业
+          let homeworkCount = 0
+          let pendingHomework = 0
+          courses.forEach(c => {
+            if (c.homeworks && Array.isArray(c.homeworks)) {
+              homeworkCount += c.homeworks.length
+              pendingHomework += c.homeworks.filter(h => h.status === 'pending').length
+            }
+          })
+          stats.totalHomework = homeworkCount
+          todayStats.homework = pendingHomework
+          // 考试
+          let examCount = 0
+          courses.forEach(c => {
+            if (c.exams && Array.isArray(c.exams)) {
+              examCount += c.exams.length
+            }
+          })
+          stats.totalExams = examCount
+          // 课程进度
+          courseProgressOption.value.xAxis.data = ['第1周', '第2周', '第3周', '第4周']
+          courseProgressOption.value.series[0].data = [12, 15, 18, 20] // 可用API替换
+          courseProgressOption.value.series[1].data = [10, 14, 16, 18] // 可用API替换
+        }
+        // 2. 获取资源统计（如需展示）
+        // const resourceRes = await resourceApi.getResourcesByTeacher(userStore.userInfo.id)
+        // 3. 获取消息/通知
+        const msgRes = await getMyMessages(userStore.userInfo.id)
+        notifications.value = (msgRes?.data || []).map(m => ({
+          id: m.id,
+          title: m.title,
+          time: m.createTime,
+          type: m.type || 'info'
+        }))
+        // 4. 获取最近活动
+        const logRes = await getLogList()
+        recentActivities.value = (logRes?.data || []).slice(0, 5).map(l => ({
+          id: l.id,
+          title: l.operationContent,
+          time: l.createTime,
+          type: l.type || 'course',
+          icon: l.icon || 'Reading'
+        }))
+        // 5. 获取待办事项（可根据业务自定义）
+        todoList.value = (courses || []).flatMap(c =>
+          (c.homeworks || []).filter(h => h.status === 'pending').map(h => ({
+            id: h.id,
+            text: `批改《${h.title || h.name || '作业'}》`,
+            date: h.dueTime || '近期',
+            completed: false
+          }))
+        )
       })
   
       return {

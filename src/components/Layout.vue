@@ -16,11 +16,7 @@
           
           <div class="header-right">
             <!-- 消息通知 -->
-            <el-badge :value="3" class="header-item">
-              <el-button type="text" size="large">
-                <el-icon><Bell /></el-icon>
-              </el-button>
-            </el-badge>
+            <MessageNotification class="header-item" />
             
             <!-- 用户菜单 -->
             <el-dropdown class="header-item" @command="handleUserCommand">
@@ -161,11 +157,10 @@
               <!-- 信息中心 -->
               <el-sub-menu index="/dashboard/info">
                 <template #title>
-                  <el-icon><MessageBox /></el-icon>
+                  <el-icon><Message /></el-icon>
                   <span>信息中心</span>
                 </template>
-                <el-menu-item index="/dashboard/info/list">信息列表</el-menu-item>
-                <el-menu-item index="/dashboard/info/faq">常见信息</el-menu-item>
+                <el-menu-item index="/dashboard/info/message-center">消息中心</el-menu-item>
               </el-sub-menu>
               
               <!-- 管理员专用菜单 -->
@@ -213,9 +208,13 @@ import { ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { userLogHelper } from '@/utils/logHelper'
+import MessageNotification from './MessageNotification.vue'
   
   export default {
     name: 'Layout',
+    components: {
+      MessageNotification
+    },
     setup() {
       const route = useRoute()
       const router = useRouter()

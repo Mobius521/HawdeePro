@@ -1,4 +1,6 @@
 import request from '@/utils/request'
+import { addLog } from '@/api/log'
+import { useUserStore } from '@/stores/user'
 
 // 资源管理API
 export const resourceApi = {
@@ -22,13 +24,31 @@ export const resourceApi = {
     })
   },
 
-  // 上传资源（元信息记录）
-  uploadResource(resourceData) {
-    return request({
-      url: '/resource/upload',
+  // 上传资源文件到OSS
+  uploadResourceFile(file, teacherId, resourceType, resourceName, resourceSubscribe) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('teacherId', teacherId)
+    formData.append('resourceType', resourceType)
+    formData.append('resourceName', resourceName)
+    formData.append('resourceSubscribe', resourceSubscribe)
+    
+    const promise = request({
+      url: '/resource/upload/file',
       method: 'post',
-      data: resourceData
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     })
+    promise.then(() => {
+      const userStore = useUserStore()
+      addLog({
+        staffId: teacherId || userStore.userInfo.id,
+        operationContent: `上传资源：${resourceName}`
+      })
+    })
+    return promise
   },
 
   // 下载资源（获取URL）
@@ -41,15 +61,23 @@ export const resourceApi = {
 
   // 删除资源
   deleteResource(resourceId) {
-    return request({
+    const promise = request({
       url: `/resource/delete/${resourceId}`,
       method: 'delete'
     })
+    promise.then(() => {
+      const userStore = useUserStore()
+      addLog({
+        staffId: userStore.userInfo.id,
+        operationContent: `删除资源：${resourceId}`
+      })
+    })
+    return promise
   },
 
   // 分享资源给其他教师
   shareResource(resourceId, targetTeacherId) {
-    return request({
+    const promise = request({
       url: '/resource/share',
       method: 'post',
       headers: {
@@ -60,6 +88,14 @@ export const resourceApi = {
         targetTeacherId
       })
     })
+    promise.then(() => {
+      const userStore = useUserStore()
+      addLog({
+        staffId: userStore.userInfo.id,
+        operationContent: `分享资源：${resourceId} 给 ${targetTeacherId}`
+      })
+    })
+    return promise
   }
 }
 
@@ -71,14 +107,15 @@ export const resourceUtils = {
       id: backendData.resourceId,
       name: backendData.resourceName || '未命名资源',
       type: resourceUtils.getResourceType(backendData.resourceType),
-      size: backendData.size || 0,
+      size: typeof backendData.size === 'string' ? parseInt(backendData.size, 10) || 0 : (backendData.size || 0),
       url: backendData.resourceUrl,
       courseName: backendData.courseName || '',
       courseId: backendData.courseId || '',
       downloads: backendData.downloads || 0,
       uploader: backendData.uploader || '未知',
       uploadTime: backendData.uploadTime,
-      description: backendData.description || '',
+      description: backendData.resourceSubscribe || '',
+      teacherId: backendData.teacherId,
       permission: backendData.permission || 'course'
     }
   },
@@ -91,8 +128,8 @@ export const resourceUtils = {
       resourceUrl: frontendData.url,
       uploadTime: frontendData.uploadTime || new Date().toISOString(),
       resourceName: frontendData.name,
+      resourceSubscribe: frontendData.description,
       courseId: frontendData.courseId,
-      description: frontendData.description,
       permission: frontendData.permission
     }
   },
@@ -100,11 +137,10 @@ export const resourceUtils = {
   // 获取资源类型
   getResourceType(backendType) {
     const typeMap = {
-      '文档': 'document',
-      '视频': 'video',
-      '音频': 'audio',
-      '图片': 'image',
-      '其他': 'other'
+      'document': 'document',
+      'video': 'video',
+      'ppt': 'ppt',
+      'other': 'other'
     }
     return typeMap[backendType] || 'other'
   },
@@ -112,12 +148,11 @@ export const resourceUtils = {
   // 获取后端资源类型
   getBackendResourceType(frontendType) {
     const typeMap = {
-      'document': '文档',
-      'video': '视频',
-      'audio': '音频',
-      'image': '图片',
-      'other': '其他'
+      'document': 'document',
+      'video': 'video',
+      'ppt': 'ppt',
+      'other': 'other'
     }
-    return typeMap[frontendType] || '其他'
+    return typeMap[frontendType] || 'other'
   }
 } 

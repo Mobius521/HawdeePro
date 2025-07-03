@@ -35,6 +35,8 @@ import livecreate from '@/views/live/CreateLiveDialog.vue'
 import LiveRoom from '@/views/live/EditLiveDialog.vue'
 import LogManagement from '@/views/Log/log.vue'
 import AssignmentStatistics from '@/views/Assign/AssignmentStatistics.vue'
+import MessageCenter from '@/views/info/MessageCenter.vue'
+import MessageDetail from '@/views/info/MessageDetail.vue'
 
 const routes = [
   {
@@ -260,28 +262,29 @@ const routes = [
             
           }
         ]
-      }
+      },
+
       // 信息中心
-      // {
-      //   path: 'info',
-      //   name: 'Info',
-      //   redirect: '/info/list',
-      //   meta: { title: '信息中心', icon: 'MessageBox' },
-      //   children: [
-      //     {
-      //       path: 'list',
-      //       name: 'InfoList',
-      //       component: () => import('@/views/support/List.vue'),
-      //       meta: { title: '信息列表' }
-      //     },
-      //     {
-      //       path: 'faq',
-      //       name: 'FAQ',
-      //       component: () => import('@/views/support/FAQ.vue'),
-      //       meta: { title: '常见信息' }
-      //     }
-      //   ]
-      // },
+      {
+        path: 'info',
+        name: 'Info',
+        redirect: 'message-center',
+        meta: { title: '信息中心', icon: 'Message' },
+        children: [
+          {
+            path: 'message-center',
+            name: 'MessageCenter',
+            component: MessageCenter,
+            meta: { title: '消息中心' }
+          },
+          {
+            path: 'message-detail/:id',
+            name: 'MessageDetail',
+            component: MessageDetail,
+            meta: { title: '消息详情' }
+          }
+        ]
+      }
     ]
   }
 ]

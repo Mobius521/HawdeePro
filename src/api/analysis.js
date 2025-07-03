@@ -2,63 +2,29 @@ import request from '@/utils/request'
 
 // 学情分析API
 export const analysisApi = {
-  // 获取课程学生列表
-  getStudentsByCourse(courseId) {
-    return request({
-      url: `/student/analysis/students/${courseId}`,
-      method: 'get'
-    })
-  },
+  // 获取课程下学生列表
+  getStudentsByCourse: (courseId) => request.get(`/student/analysis/students/${courseId}`),
 
-  // 获取学生学习记录
-  getStudyRecords(studentId) {
-    return request({
-      url: `/student/analysis/records/${studentId}`,
-      method: 'get'
-    })
-  },
+  // 获取学生直播课学习记录
+  getStudyRecords: (studentId) => request.get(`/student/analysis/records/${studentId}`),
 
   // 获取学生作业情况
-  getHomeworkRecords(studentId) {
-    return request({
-      url: `/student/analysis/homework/${studentId}`,
-      method: 'get'
-    })
-  },
+  getHomeworkRecords: (studentId) => request.get(`/student/analysis/homework/${studentId}`),
 
   // 获取学生个性化建议
-  getAdvice(studentId) {
-    return request({
-      url: `/student/analysis/advice/${studentId}`,
-      method: 'get'
-    })
-  },
+  getAdvice: (studentId) => request.get(`/student/analysis/advice/${studentId}`),
 
-  // 添加个性化建议
-  addAdvice(adviceData) {
-    return request({
-      url: '/student/analysis/advice/add',
-      method: 'put',
-      data: adviceData
-    })
-  },
+  // AI自动生成建议
+  autoAdviceByAI: ({ StudentId, context }) => request.post(`/student/analysis/advice/auto`, null, { params: { StudentId, context } }),
 
-  // 删除个性化建议
-  deleteAdvice(adviceId) {
-    return request({
-      url: `/student/analysis/advice/${adviceId}`,
-      method: 'delete'
-    })
-  },
+  // 上传个性化建议
+  addAdvice: (advice) => request.put(`/student/analysis/advice/add`, advice),
 
-  // 更新个性化建议
-  updateAdvice(adviceData) {
-    return request({
-      url: '/student/analysis',
-      method: 'put',
-      data: adviceData
-    })
-  }
+  // 删除建议
+  deleteAdvice: (adviceId) => request.delete(`/student/analysis/advice/${adviceId}`),
+
+  // 修改建议
+  updateAdvice: (advice) => request.put(`/student/analysis/advice/update`, advice)
 }
 
 // 学情分析数据转换工具
@@ -106,23 +72,25 @@ export const analysisUtils = {
   // 将后端建议数据转换为前端格式
   transformAdviceData(backendData) {
     return {
-      id: backendData.adviceId || backendData.id,
+      adviceId: backendData.adviceId || backendData.id,
       title: backendData.title || '学习建议',
       content: backendData.content,
       createTime: backendData.createTime,
       studentId: backendData.studentId,
-      recordId: backendData.recordId
+      recordId: backendData.recordId,
+      courseId: backendData.courseId
     }
   },
 
   // 将前端建议数据转换为后端格式
   transformToBackendAdviceData(frontendData) {
     return {
-      adviceId: frontendData.id,
+      adviceId: frontendData.adviceId,
       content: frontendData.content,
       title: frontendData.title,
       studentId: frontendData.studentId,
-      recordId: frontendData.recordId
+      recordId: frontendData.recordId,
+      courseId: frontendData.courseId
     }
   },
 

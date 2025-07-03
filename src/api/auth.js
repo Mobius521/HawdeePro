@@ -23,16 +23,22 @@ export const login = async (data) => {
   }
 };
 
-// 注册接口
+// 注册接口 - 匹配后端Teacher实体字段
 export const register = async (data) => {
   try {
-    console.log('模拟注册请求，请求数据:', data);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // 模拟注册成功
-        resolve({ success: true, message: '注册成功' });
-      }, 1000);
+    const response = await request({
+      url: '/auth/register',
+      method: 'post',
+      data: {
+        staffId: data.staffId,
+        name: data.name,
+        password: data.password,
+        phone: data.phone,
+        email: data.email,
+        roleType: data.roleType
+      }
     });
+    return response;
   } catch (error) {
     throw new Error(error.response?.data?.message || '注册请求失败');
   }
@@ -61,5 +67,55 @@ export const getTeacherName = async (staffId) => {
     return response;
   } catch (error) {
     throw new Error(error.response?.data?.message || '获取教师姓名失败');
+  }
+};
+
+// 获取个人信息接口
+export const getProfile = async (staffId) => {
+  try {
+    const response = await request({
+      url: `/auth/profile/${staffId}`,
+      method: 'get'
+    });
+    return response;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || '获取个人信息失败');
+  }
+};
+
+// 更新个人信息接口
+export const updateProfile = async (staffId, data) => {
+  try {
+    const response = await request({
+      url: '/auth/update',
+      method: 'post',
+      data: {
+        staffId: staffId,
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        roleType: data.roleType
+      }
+    });
+    return response;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || '更新个人信息失败');
+  }
+};
+
+// 修改密码接口 - 暂时使用更新个人信息接口
+export const changePassword = async (staffId, data) => {
+  try {
+    const response = await request({
+      url: '/auth/update',
+      method: 'post',
+      data: {
+        staffId: staffId,
+        password: data.newPassword
+      }
+    });
+    return response;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || '修改密码失败');
   }
 };
